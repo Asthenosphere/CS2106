@@ -23,6 +23,8 @@ void insert_node_from_head_at(list *lst, int index, int data)
     if (lst->head == NULL) {
         newNode = (struct NODE *)malloc(sizeof(struct NODE));
         newNode->data = data;
+        newNode->next = NULL;
+        newNode->prev = NULL;
         lst->head = newNode;
         lst->tail = newNode;
     } else {
@@ -68,6 +70,8 @@ void insert_node_from_tail_at(list *lst, int index, int data)
     if (lst->tail == NULL) {
         newNode = (struct NODE *)malloc(sizeof(struct NODE));
         newNode->data = data;
+        newNode->next = NULL;
+        newNode->prev = NULL;
         lst->tail = newNode;
         lst->head = newNode;
     } else {
