@@ -127,6 +127,8 @@ void delete_node_from_head_at(list *lst, int index)
             struct NODE * first = temp;
             if (temp->next != NULL) {
                 temp->next->prev = NULL;
+            } else {
+                lst->tail = NULL;
             }
             lst->head = temp->next;
             free(first);
@@ -165,12 +167,14 @@ void delete_node_from_tail_at(list *lst, int index)
             temp = temp->prev;
         }
         if (index == 0) {
-            struct NODE * last = temp;
-            if (temp->prev != NULL) {
-                temp->prev->next = NULL;
+            struct NODE * prev = temp->prev;
+            if (prev != NULL) {
+                prev->next = NULL;
+            } else {
+                lst->head = NULL;
             }
-            lst->tail = temp->prev;
-            free(last);
+            lst->tail = prev;
+            free(temp);
         } else if (temp->prev == NULL) {
             if (temp->next != NULL) {
                 temp->next->prev = NULL;

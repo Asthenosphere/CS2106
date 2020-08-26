@@ -57,6 +57,7 @@ int main(int argc, char **argv)
         run_instruction(in_file, lst, instr);
     }
 
+    free(in_file);
     reset_list(lst);
     free(lst);
 }
