@@ -8,12 +8,12 @@
 ####################
 
 # fill the below up
-hostname=xcne6
+hostname=$(hostname)
 kernel_version=$(uname -r)
 process_cnt=$(ps -e --no-heading | wc -l)
 user_process_cnt=$(ps -U "$USER" --no-heading | wc -l)
-mem_usage=$(free | grep Mem | awk '{$3/$2 * 100.0}')
-swap_usage=$(free | grep Swap | awk '{$3/$2 * 100.0}')
+mem_usage=$(free | grep Mem | awk '{print $3/$2 * 100.0}')
+swap_usage=$(free | grep Swap | awk '{print $3/$2 * 100.0}')
 
 echo "Hostname: $hostname"
 echo "Linux Kernel Version: $kernel_version"
