@@ -1,8 +1,8 @@
 /*************************************
-* Lab 1 Exercise 1
-* Name: Wang Luo
-* Student No: A0180092L
-* Lab Group: B09
+* Lab 1 Exercise 2
+* Name:
+* Student No:
+* Lab Group:
 *************************************/
 
 #include <stdio.h>
@@ -11,8 +11,9 @@
 #include <ctype.h>
 #include "node.h"
 
-// add in your implementation below to the respective functions
-// feel free to add any headers you deem fit (although you do not need to)
+// copy in your implementation of the functions from ex1
+// there is on extra function called map which you have to fill up too
+// feel free to add any new functions as you deem fit
 
 // inserts a new node with data value at index (counting from the front
 // starting at 0)
@@ -209,4 +210,27 @@ void reset_list(list *lst)
     }
     lst->head = NULL;
     lst->tail = NULL;
+}
+
+// traverses list and applies func on data values of all elements in the list
+void map(list *lst, int (*func)(int))
+{
+    struct NODE * curr = lst->head;
+    while (curr != NULL) {
+        curr->data = (*func)(curr->data);
+        curr = curr->next;
+    }
+}
+
+// traverses list and returns the sum of the data values of every node
+// in the list
+long sum_list(list *lst)
+{
+    long sum = 0;
+    struct NODE * curr = lst->head;
+    while (curr != NULL) {
+        sum += curr->data;
+        curr = curr->next;
+    }
+    return sum;
 }

@@ -1,8 +1,8 @@
 /*************************************
 * Lab 1 Exercise 1
-* Name: Wang Luo
-* Student No: A0180092L
-* Lab Group: B09
+* Name:
+* Student No:
+* Lab Group:
 *************************************/
 
 #include <stdio.h>
