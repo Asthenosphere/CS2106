@@ -21,30 +21,49 @@ sm_status_t list[32];
 int terminal_commands[32];
 int count;
 
-void set_read(int * l_pipe) {
-    dup2(l_pipe[READ_END], 0);
-    close(l_pipe[READ_END]);
-    close(l_pipe[WRITE_END]);
+//Pipe read
+void read_en(int * infd)
+{
+    dup2(infd[READ_END], STDIN_FILENO);
+    close(infd[READ_END]);
+    close(infd[WRITE_END]);
 }
 
-void set_write(int * r_pipe) {
-    dup2(r_pipe[WRITE_END], 1);
-    close(r_pipe[READ_END]);
-    close(r_pipe[WRITE_END]);
+//Pipe write
+void write_en(int * outfd)
+{
+    dup2(outfd[WRITE_END], STDOUT_FILENO);
+    close(outfd[READ_END]);
+    close(outfd[WRITE_END]);
 }
 
-int fork_and_chain(int * l_pipe, int * r_pipe) {
+//Fork, read from pipe, write to pipe, exec
+int fork_chain(int * infd, int * outfd)
+{
     int pid = fork();
-    if (pid != -1) {
-        if (l_pipe) {
-            set_read(l_pipe);
+
+    if (pid == 0)
+    {
+        if (infd != NULL)
+        {
+            read_en(infd);
         }
-        if (r_pipe) {
-            set_write(r_pipe);
+
+        if (outfd != NULL)
+        {
+            write_en(outfd);
         }
         return pid;
     }
-    return pid;
+    else if (pid < 0)
+    {
+        fprintf(stderr, "Fork error!\n");
+        return pid;
+    }
+    else
+    {
+        return pid;
+    }
 }
 
 // Use this function to any initialisation if you need to.
@@ -71,10 +90,8 @@ void sm_start(const char *processes[]) {
         exit(1);
     }
 
-    set_write(r_pipe);
-
-    l_pipe[0] = r_pipe[0];
-    l_pipe[1] = r_pipe[1];
+    //l_pipe[0] = r_pipe[0];
+    //l_pipe[1] = r_pipe[1];
 
     while (1) {
         while (processes[end]) {
@@ -82,54 +99,49 @@ void sm_start(const char *processes[]) {
         }
 
         int pid;
-        if (pipe(r_pipe) == -1) {
-            printf("Error opening the pipe.");
-            exit(1);
-        }
-        pid = fork_and_chain(l_pipe, r_pipe);
 
-        if (pid == -1) {
-            exit(1);
-        }
-
-        if (pid == 0) {
-            /*
-            for (int i = 0; i < 32; i++) {
-                if (list[i].pid) {
-                    fprintf(stderr, "%d. %s (PID %ld): %s\n", i, list[i].path, (long) list[i].pid,
-                            list[i].running ? "Running" : "Exited");
-                    fprintf(stderr, "%s\n", processes[start]);
-                }
+        if (start == 0) {
+            pipe(r_pipe);
+            pid = fork_chain(NULL, r_pipe);
+            if (pid == 0) {
+                execvp(processes[start], (char **) processes + start);
+                fprintf(stderr, "Command not found!\n");
+                exit(1);
             }
-             */
-
-            if (processes[end + 1]) {
-                close(l_pipe[0]);
-                close(l_pipe[1]);
-                l_pipe[0] = r_pipe[0];
-                l_pipe[1] = r_pipe[1];
-            } else {
-                close(l_pipe[0]);
-                close(l_pipe[1]);
+            l_pipe[READ_END] = r_pipe[READ_END];
+            l_pipe[WRITE_END] = r_pipe[WRITE_END];
+        } else if (!processes[end + 1]) {
+            pid = fork_chain(l_pipe, NULL);
+            if (pid == 0) {
+                execvp(processes[start], (char **) processes + start);
+                fprintf(stderr, "Command not found!\n");
+                exit(1);
             }
-            fprintf(stderr, "Command: %s\n", processes[start]);
-            execv(processes[start], (char **) processes + start);
-            perror("Error");
+            close(l_pipe[READ_END]);
+            close(l_pipe[WRITE_END]);
         } else {
-            list[count].pid = pid;
-            list[count].running = true;
-            char * ptr = (char *)malloc(sizeof(char *));
-            strcpy(ptr, processes[start]);
-            list[count].path = ptr;
-            if (!processes[end + 1]) {
-                terminal_commands[count] = 1;
+            pipe(r_pipe);
+            pid = fork_chain(l_pipe, r_pipe);
+            if (pid == 0) {
+                execvp(processes[start], (char **) processes + start);
+                fprintf(stderr, "Command not found!\n");
+                exit(1);
             }
-            count++;
+            close(l_pipe[READ_END]);
+            close(l_pipe[WRITE_END]);
+            l_pipe[READ_END] = r_pipe[READ_END];
+            l_pipe[WRITE_END] = r_pipe[WRITE_END];
         }
 
-        if (!processes[++end]) {
-            break;
+        list[count].pid = pid;
+        list[count].running = true;
+        char * ptr = (char *)malloc(sizeof(char *));
+        strcpy(ptr, processes[start]);
+        list[count].path = ptr;
+        if (!processes[end + 1]) {
+            terminal_commands[count] = 1;
         }
+        count++;
 
         start = end;
     }

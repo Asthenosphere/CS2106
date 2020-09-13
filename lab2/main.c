@@ -50,7 +50,6 @@ static void process_commands(FILE *file) {
 
     exiting = handle_command(num_tokens, &tokens);
     free(tokens);
-
     if (!exiting) {
       print_prompt();
     }
@@ -123,7 +122,6 @@ static bool handle_command(const size_t num_tokens, char ***tokensp) {
   } else {
     printf("Unknown command %s\n", cmd);
   }
-
   return false;
 }
 
