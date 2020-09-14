@@ -70,6 +70,7 @@ void sm_start(const char *processes[]) {
                 close(pipes[3]);
             } else if (!processes[end]) {
                 fprintf(stderr, "83\n");
+                dup2(pipes[2], 0);
                 close(pipes[0]);
                 close(pipes[1]);
                 close(pipes[2]);
