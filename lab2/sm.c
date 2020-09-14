@@ -39,14 +39,14 @@ void sm_free(void) {
 // Exercise 1a/2: start services
 void sm_start(const char *processes[]) {
     int start = 0, end = 0;
-    int l_pipe[2], r_pipe[2];
+    int pipes[4];
 
-    if (pipe(l_pipe) == -1) {
+    if (pipe(pipes) == -1) {
         fprintf(stderr, "Error opening left pipe.");
         exit(1);
     }
 
-    if (pipe(r_pipe) == -1) {
+    if (pipe(pipes + 2) == -1) {
         printf("Error opening right pipe.");
         exit(1);
     }
@@ -63,24 +63,25 @@ void sm_start(const char *processes[]) {
         if (pid == 0) {
             if (start == 0) {
                 fprintf(stderr, "76\n");
-                dup2(l_pipe[WRITE_END], 1);
-                close(l_pipe[READ_END]);
-                close(l_pipe[WRITE_END]);
-                close(r_pipe[READ_END]);
-                close(r_pipe[WRITE_END]);
+                dup2(pipes[1], 1);
+                close(pipes[0]);
+                close(pipes[1]);
+                close(pipes[2]);
+                close(pipes[3]);
             } else if (!processes[end]) {
                 fprintf(stderr, "83\n");
-                close(l_pipe[READ_END]);
-                close(l_pipe[WRITE_END]);
-                close(r_pipe[READ_END]);
-                close(r_pipe[WRITE_END]);
+                close(pipes[0]);
+                close(pipes[1]);
+                close(pipes[2]);
+                close(pipes[3]);
             } else {
                 fprintf(stderr, "89\n");
-                dup2(r_pipe[READ_END], 0);
-                close(l_pipe[READ_END]);
-                close(l_pipe[WRITE_END]);
-                close(r_pipe[READ_END]);
-                close(r_pipe[WRITE_END]);
+                dup2(pipes[0], 0);
+                dup2(pipes[3], 1);
+                close(pipes[0]);
+                close(pipes[1]);
+                close(pipes[2]);
+                close(pipes[3]);
             }
             // fprintf(stderr, "Command: %s\n", processes[start]);
             execvp(processes[start], (char **) processes + start);
@@ -110,10 +111,10 @@ void sm_start(const char *processes[]) {
 
         start = end;
         if (!processes[end]) {
-            close(l_pipe[READ_END]);
-            close(l_pipe[WRITE_END]);
-            close(r_pipe[READ_END]);
-            close(r_pipe[WRITE_END]);
+            close(pipes[0]);
+            close(pipes[1]);
+            close(pipes[2]);
+            close(pipes[3]);
         }
 
         if (!processes[end]) {
