@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/errno.h>
+#include <signal.h>
+#include <fcntl.h>
 #include "sm.h"
 
 #define READ_END 0
@@ -19,35 +21,47 @@
 
 sm_status_t list[32];
 int terminal_commands[32];
-int count;
+int logged_processes[32];
+int processes_count;
+int services_count;
 
-// Use this function to any initialisation if you need to.
-void sm_init(void) {
-    count = 0;
-    for (int i = 0; i < 32; i++) {
-        list[i].pid = 0;
-        list[i].running = false;
-        list[i].path = NULL;
-        terminal_commands[i] = 0;
+void log_helper(void) {
+    char filename[14] = "service";
+    if (services_count >= 10) {
+        filename[7] = services_count % 10 + '0';
+        filename[8] = services_count / 10 + '0';
+        filename[9] = 0;
+    } else {
+        filename[7] = services_count + '0';
+        filename[8] = 0;
     }
-}
-
-// Use this function to do any cleanup of resources.
-void sm_free(void) {
-}
-
-// Exercise 1a/2: start services
-void sm_start(const char *processes[]) {
-    int start = 0, end = 0;
-    int pipes[4];
-
-    if (pipe(pipes) == -1) {
-        fprintf(stderr, "Error opening left pipe.");
+    strcat(filename, ".log");
+    int out = open(filename, O_RDWR | O_APPEND | O_CREAT, 0600);
+    if (out == -1) {
+        fprintf(stderr, "%s\n", "Cannot open log file");
         exit(1);
     }
 
-    if (pipe(pipes + 2) == -1) {
-        printf("Error opening right pipe.");
+    if (dup2(out, fileno(stdout)) != fileno(stdout) ||
+        dup2(out, fileno(stderr)) != fileno(stderr)) {
+        fprintf(stderr, "%s\n", "Cannot redirect stdout or stderr to file");
+    }
+    close(out);
+    fflush(stdout);
+    fflush(stderr);
+}
+
+void start_helper(const char * processes[], int is_log) {
+    int start = 0, end = 0;
+
+    int l_pipe[2], r_pipe[2];
+    if (pipe(l_pipe) == -1) {
+        fprintf(stderr, "Error opening left pipe");
+        exit(1);
+    }
+
+    if (pipe(r_pipe) == -1) {
+        fprintf(stderr, "Error opening right pipe");
         exit(1);
     }
 
@@ -62,60 +76,59 @@ void sm_start(const char *processes[]) {
 
         if (pid == 0) {
             if (start == 0) {
-                fprintf(stderr, "76\n");
-                dup2(pipes[1], 1);
-                close(pipes[0]);
-                close(pipes[1]);
-                close(pipes[2]);
-                close(pipes[3]);
+                if (!processes[end]) {
+                    if (is_log) {
+                        log_helper();
+                    }
+                } else {
+                    dup2(l_pipe[WRITE_END], 1);
+                }
+                close(l_pipe[READ_END]);
+                close(l_pipe[WRITE_END]);
+                close(r_pipe[READ_END]);
+                close(r_pipe[WRITE_END]);
             } else if (!processes[end]) {
-                fprintf(stderr, "83\n");
-                dup2(pipes[2], 0);
-                close(pipes[0]);
-                close(pipes[1]);
-                close(pipes[2]);
-                close(pipes[3]);
+                dup2(r_pipe[READ_END], 0);
+                if (is_log) {
+                    log_helper();
+                }
+                close(l_pipe[READ_END]);
+                close(l_pipe[WRITE_END]);
+                close(r_pipe[READ_END]);
+                close(r_pipe[WRITE_END]);
             } else {
-                fprintf(stderr, "89\n");
-                dup2(pipes[0], 0);
-                dup2(pipes[3], 1);
-                close(pipes[0]);
-                close(pipes[1]);
-                close(pipes[2]);
-                close(pipes[3]);
+                dup2(l_pipe[READ_END], 0);
+                dup2(r_pipe[WRITE_END], 1);
+                close(l_pipe[READ_END]);
+                close(l_pipe[WRITE_END]);
+                close(r_pipe[READ_END]);
+                close(r_pipe[WRITE_END]);
             }
-            // fprintf(stderr, "Command: %s\n", processes[start]);
             execvp(processes[start], (char **) processes + start);
-            fprintf(stderr, "Error executing the command.");
+            fprintf(stderr, "Error executing the command： %s\n", processes[start]);
             exit(1);
         } else {
-            list[count].pid = pid;
-            list[count].running = true;
+            list[processes_count].pid = pid;
+            list[processes_count].running = true;
             char * ptr = (char *)malloc(sizeof(char *));
             strcpy(ptr, processes[start]);
-            list[count].path = ptr;
-            // fprintf(stderr, "95: %s\n", processes[start]);
+            list[processes_count].path = ptr;
             if (!processes[end]) {
-                terminal_commands[count] = 1;
-            }
-            count++;
-            /*
-            for (int i = 0; i < 32; i++) {
-                if (list[i].pid) {
-                    fprintf(stderr, "%d. %s (PID %ld): %s - Terminal: %d\n", i, list[i].path, (long) list[i].pid,
-                            list[i].running ? "Running" : "Exited", terminal_commands[i]);
-                    fprintf(stderr, "%s\n", processes[start]);
+                terminal_commands[processes_count] = 1;
+                if (is_log) {
+                    logged_processes[services_count] = 1;
                 }
+                services_count++;
             }
-             */
+            processes_count++;
         }
 
         start = end;
         if (!processes[end]) {
-            close(pipes[0]);
-            close(pipes[1]);
-            close(pipes[2]);
-            close(pipes[3]);
+            close(l_pipe[READ_END]);
+            close(l_pipe[WRITE_END]);
+            close(r_pipe[READ_END]);
+            close(r_pipe[WRITE_END]);
         }
 
         if (!processes[end]) {
@@ -124,10 +137,33 @@ void sm_start(const char *processes[]) {
     }
 }
 
+
+// Use this function to any initialisation if you need to.
+void sm_init(void) {
+    processes_count = 0;
+    services_count = 0;
+    for (int i = 0; i < 32; i++) {
+        list[i].pid = 0;
+        list[i].running = false;
+        list[i].path = NULL;
+        terminal_commands[i] = 0;
+        logged_processes[i] = 0;
+    }
+}
+
+// Use this function to do any cleanup of resources.
+void sm_free(void) {
+}
+
+// Exercise 1a/2: start services
+void sm_start(const char *processes[]) {
+    start_helper(processes, 0);
+}
+
 // Exercise 1b: print service status
 size_t sm_status(sm_status_t statuses[]) {
     int size = 0;
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < processes_count; i++) {
         if (terminal_commands[i]) {
             int status;
             pid_t result = waitpid(list[i].pid, &status, WNOHANG);
@@ -146,19 +182,113 @@ size_t sm_status(sm_status_t statuses[]) {
 
 // Exercise 3: stop service, wait on service, and shutdown
 void sm_stop(size_t index) {
+    int processes_count = (int) index;
+    int left, right;
+    for (right = 0; right < 32; right++) {
+        if (terminal_commands[right]) {
+            processes_count--;
+        }
+        if (processes_count < 0) {
+            break;
+        }
+    }
+    left = right;
+    while (--left >= 0 && !terminal_commands[left]) {
+        continue;
+    }
+    if (terminal_commands[left] || left < 0) {
+        left++;
+    }
+    int wait_status;
+    int kill_status;
+    for (int i = left; i <= right; i++) {
+        int res = waitpid(list[i].pid, &wait_status, WNOHANG);
+        if (res != 0) {
+            continue;
+        } else {
+            kill_status = kill(list[i].pid, SIGTERM);
+            if (kill_status == -1) {
+                fprintf(stderr, "Error killing the process\n");
+                exit(1);
+            }
+        }
+    }
+    int status;
+    for (int i = left; i <= right; i++) {
+        waitpid(list[i].pid, &status, 0);
+    }
 }
 
 void sm_wait(size_t index) {
+    int processes_count = (int) index;
+    int left, right;
+    for (right = 0; right < 32; right++) {
+        if (terminal_commands[right]) {
+            processes_count--;
+        }
+        if (processes_count < 0) {
+            break;
+        }
+    }
+    left = right;
+    while (--left >= 0 && !terminal_commands[left]) {
+        continue;
+    }
+    if (terminal_commands[left] || left < 0) {
+        left++;
+    }
+    int status;
+    for (int i = left; i <= right; i++) {
+        waitpid(list[i].pid, &status, 0);
+    }
 }
 
 void sm_shutdown(void) {
+    int num_services = 0;
+    for (int i = 0; i < processes_count; i++) {
+        if (terminal_commands[i]) {
+            num_services++;
+        }
+    }
+    for (int i = 0; i < num_services; i++) {
+        sm_stop(i);
+    }
 }
 
 // Exercise 4: start with output redirection
 void sm_startlog(const char *processes[]) {
+    start_helper(processes, 1);
 }
 
 // Exercise 5: show log file
 void sm_showlog(size_t index) {
+    if (logged_processes[index]) {
+        FILE * fptr;
+        char c;
+        char filename[14] = "service";
+        if (index >= 10) {
+            filename[7] = index / 10 + '0';
+            filename[8] = index % 10 + '0';
+            filename[9] = 0;
+        } else {
+            filename[7] = index + '0';
+            filename[8] = 0;
+        }
+        strcat(filename, ".log");
+
+        fptr = fopen(filename, "r");
+        if (!fptr) {
+            fprintf(stderr, "Cannot open log file: %s\n", filename);
+            exit(1);
+        }
+        c = fgetc(fptr);
+        while (c != EOF) {
+            printf("%c", c);
+            c = fgetc(fptr);
+        }
+        fclose(fptr);
+    } else {
+        printf("service has no log file\n");
+    }
 }
 
