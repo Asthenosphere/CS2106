@@ -110,7 +110,7 @@ void start_helper(const char * processes[], int is_log) {
         } else {
             list[processes_count].pid = pid;
             list[processes_count].running = true;
-            char * ptr = (char *)malloc(sizeof(char *));
+            char * ptr = (char *)malloc(strlen(processes[start]) + 1);
             strcpy(ptr, processes[start]);
             list[processes_count].path = ptr;
             if (!processes[end]) {
@@ -153,6 +153,9 @@ void sm_init(void) {
 
 // Use this function to do any cleanup of resources.
 void sm_free(void) {
+    for (int i = 0; i < processes_count; i++) {
+	free((void *)list[i].path);
+    }
 }
 
 // Exercise 1a/2: start services
