@@ -34,7 +34,10 @@ void fizzbuzz_init ( int n ) {
 }
 
 void num_thread( int n, void (*print_num)(int) ) {
-    for (int i = 1; i <= n; i++) {
+    for (int i = 1; i <= n + 1; i++) {
+        if (i == n + 1) {
+            return;
+        }
         sem_wait(num_sem);
         if (i % 3 == 0 && i % 5 == 0) {
             sem_post(fizzbuzz_sem);
