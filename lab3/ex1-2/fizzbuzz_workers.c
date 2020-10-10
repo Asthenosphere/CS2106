@@ -30,32 +30,30 @@ void fizzbuzz_init ( int n ) {
         fprintf(stderr, "Error allocating memory for semaphores.\n");
         exit(1);
     }
-    sem_init(num_sem, 0, 1);
+    sem_init(num_sem, 0, 0);
     sem_init(fizz_sem, 0, 0);
     sem_init(buzz_sem, 0, 0);
     sem_init(fizzbuzz_sem, 0, 0);
 }
 
 void num_thread( int n, void (*print_num)(int) ) {
-    for (count = 1; count <= n + 1; count++) {
-        sem_wait(num_sem);
+    for (count = 1; count <= n; count++) {
         if (count % 3 == 0 && count % 5 == 0) {
             sem_post(fizzbuzz_sem);
+            sem_wait(num_sem);
         } else if (count % 5 == 0) {
             sem_post(buzz_sem);
+            sem_wait(num_sem);
         } else if (count % 3 == 0) {
             sem_post(fizz_sem);
+            sem_wait(num_sem);
         } else {
             print_num(count);
-            sem_post(num_sem);
-        }
-        if (count > n) {
-            sem_post(fizz_sem);
-            sem_post(buzz_sem);
-            sem_post(fizzbuzz_sem);
-            break;
         }
     }
+    sem_post(fizz_sem);
+    sem_post(buzz_sem);
+    sem_post(fizzbuzz_sem);
     barrier_wait(barrier);
 }
 
