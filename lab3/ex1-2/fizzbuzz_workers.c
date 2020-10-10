@@ -25,7 +25,7 @@ void fizzbuzz_init ( int n ) {
     buzz_sem = malloc(sizeof(sem_t));
     fizzbuzz_sem = malloc(sizeof(sem_t));
     barrier = malloc( sizeof(barrier_t));
-    barrier_init();
+    barrier_init(barrier, 4);
     if (num_sem == NULL || fizz_sem == NULL || buzz_sem == NULL || fizzbuzz_sem == NULL) {
         fprintf(stderr, "Error allocating memory for semaphores.\n");
         exit(1);
@@ -37,22 +37,22 @@ void fizzbuzz_init ( int n ) {
 }
 
 void num_thread( int n, void (*print_num)(int) ) {
-    for (int i = 1; i <= n + 1; i++) {
-        if (i > n) {
+    for (count = 1; count <= n + 1; count++) {
+        if (count > n) {
             sem_post(fizz_sem);
             sem_post(buzz_sem);
             sem_post(fizzbuzz_sem);
             break;
         }
         sem_wait(num_sem);
-        if (i % 3 == 0 && i % 5 == 0) {
+        if (count % 3 == 0 && count % 5 == 0) {
             sem_post(fizzbuzz_sem);
-        } else if (i % 5 == 0) {
+        } else if (count % 5 == 0) {
             sem_post(buzz_sem);
-        } else if (i % 3 == 0) {
+        } else if (count % 3 == 0) {
             sem_post(fizz_sem);
         } else {
-            print_num(i);
+            print_num(count);
             sem_post(num_sem);
         }
     }
@@ -60,33 +60,39 @@ void num_thread( int n, void (*print_num)(int) ) {
 }
 
 void fizz_thread( int n, void (*print_fizz)(void) ) {
-    for (int i = 1; i <= n; i++) {
-        if (i % 3 == 0) {
-            sem_wait(fizz_sem);
+    while (1) {
+        sem_wait(fizz_sem);
+        if (count < n) {
             print_fizz();
             sem_post(num_sem);
+        } else {
+            break;
         }
     }
     barrier_wait(barrier);
 }
 
 void buzz_thread( int n, void (*print_buzz)(void) ) {
-    for (int i = 1; i <= n; i++) {
-        if (i % 5 == 0) {
-            sem_wait(buzz_sem);
+    while (1) {
+        sem_wait(buzz_sem);
+        if (count < n) {
             print_buzz();
             sem_post(num_sem);
+        } else {
+            break;
         }
     }
     barrier_wait(barrier);
 }
 
 void fizzbuzz_thread( int n, void (*print_fizzbuzz)(void) ) {
-    for (int i = 1; i <= n; i++) {
-        if (i % 3 == 0 && i % 5 == 0) {
-            sem_wait(fizzbuzz_sem);
+    while (1) {
+        sem_wait(fizzbuzz_sem);
+        if (count < n) {
             print_fizzbuzz();
             sem_post(num_sem);
+        } else {
+            break;
         }
     }
     barrier_wait(barrier);
@@ -97,5 +103,5 @@ void fizzbuzz_destroy() {
     free(fizz_sem);
     free(buzz_sem);
     free(fizzbuzz_sem);
-    barrier_destroy();
+    barrier_destroy(barrier);
 }
