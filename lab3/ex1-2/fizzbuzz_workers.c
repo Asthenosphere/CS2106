@@ -38,12 +38,6 @@ void fizzbuzz_init ( int n ) {
 
 void num_thread( int n, void (*print_num)(int) ) {
     for (count = 1; count <= n + 1; count++) {
-        if (count > n) {
-            sem_post(fizz_sem);
-            sem_post(buzz_sem);
-            sem_post(fizzbuzz_sem);
-            break;
-        }
         sem_wait(num_sem);
         if (count % 3 == 0 && count % 5 == 0) {
             sem_post(fizzbuzz_sem);
@@ -54,6 +48,12 @@ void num_thread( int n, void (*print_num)(int) ) {
         } else {
             print_num(count);
             sem_post(num_sem);
+        }
+        if (count > n) {
+            sem_post(fizz_sem);
+            sem_post(buzz_sem);
+            sem_post(fizzbuzz_sem);
+            break;
         }
     }
     barrier_wait(barrier);
