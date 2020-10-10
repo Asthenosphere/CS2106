@@ -4,6 +4,7 @@
  * This file contains declarations. You should only modify the barrier_t struct,
  * as the method signatures will be needed to compile with the runner.
  */
+#include <semaphore.h>
 #ifndef __CS2106_BARRIER_H_
 #define __CS2106_BARRIER_H_
 
@@ -11,7 +12,6 @@ typedef struct barrier {
   int count;
   // add additional fields here
   sem_t * mutex;
-  sem_t * s;
 } barrier_t;
 
 void barrier_init ( barrier_t *barrier, int count );

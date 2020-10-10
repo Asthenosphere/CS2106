@@ -62,7 +62,7 @@ void fizz_thread( int n, void (*print_fizz)(void) ) {
 void buzz_thread( int n, void (*print_buzz)(void) ) {
     for (int i = 1; i <= n; i++) {
         if (i % 5 == 0) {
-            sem_wait(fizz_sem);
+            sem_wait(buzz_sem);
             print_buzz();
             sem_post(num_sem);
         }
@@ -72,7 +72,7 @@ void buzz_thread( int n, void (*print_buzz)(void) ) {
 void fizzbuzz_thread( int n, void (*print_fizzbuzz)(void) ) {
     for (int i = 1; i <= n; i++) {
         if (i % 3 == 0 && i % 5 == 0) {
-            sem_wait(fizz_sem);
+            sem_wait(fizzbuzz_sem);
             print_fizzbuzz();
             sem_post(num_sem);
         }
