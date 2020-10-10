@@ -12,6 +12,7 @@
 
 // declare variables to be used here
 int count;
+int total;
 sem_t *num_sem;
 sem_t *fizz_sem;
 sem_t *buzz_sem;
@@ -19,7 +20,8 @@ sem_t *fizzbuzz_sem;
 barrier_t *barrier;
 
 void fizzbuzz_init ( int n ) {
-    count = n;
+    count = 1;
+    total = n;
     num_sem = malloc(sizeof(sem_t));
     fizz_sem = malloc(sizeof(sem_t));
     buzz_sem = malloc(sizeof(sem_t));
@@ -60,7 +62,7 @@ void num_thread( int n, void (*print_num)(int) ) {
 void fizz_thread( int n, void (*print_fizz)(void) ) {
     while (1) {
         sem_wait(fizz_sem);
-        if (count < n) {
+        if (count <= n) {
             print_fizz();
             sem_post(num_sem);
         } else {
@@ -73,7 +75,7 @@ void fizz_thread( int n, void (*print_fizz)(void) ) {
 void buzz_thread( int n, void (*print_buzz)(void) ) {
     while (1) {
         sem_wait(buzz_sem);
-        if (count < n) {
+        if (count <= n) {
             print_buzz();
             sem_post(num_sem);
         } else {
@@ -86,7 +88,7 @@ void buzz_thread( int n, void (*print_buzz)(void) ) {
 void fizzbuzz_thread( int n, void (*print_fizzbuzz)(void) ) {
     while (1) {
         sem_wait(fizzbuzz_sem);
-        if (count < n) {
+        if (count <= n) {
             print_fizzbuzz();
             sem_post(num_sem);
         } else {
