@@ -26,14 +26,14 @@ void barrier_init ( barrier_t *barrier, int count ) {
 void barrier_wait ( barrier_t *barrier ) {
     sem_wait(barrier->mutex);
     barrier->count--;
-    printf("Count: %d\n", barrier->count);
+    //printf("Count: %d\n", barrier->count);
+    sem_post(barrier->mutex);
     if (barrier->count == 0) {
         sem_post(barrier->s);
     }
-    sem_post(barrier->mutex);
-    printf("Before: %d\n", *(barrier->s));
+    //printf("Before: %d\n", *(barrier->s));
     sem_wait(barrier->s);
-    printf("After: %d\n", *(barrier->s));
+    //printf("After: %d\n", *(barrier->s));
     sem_post(barrier->s);
 }
 
