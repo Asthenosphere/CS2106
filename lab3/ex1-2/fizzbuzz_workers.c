@@ -16,7 +16,7 @@ sem_t *num_sem;
 sem_t *fizz_sem;
 sem_t *buzz_sem;
 sem_t *fizzbuzz_sem;
-sem_t *mutex;
+barrier_t *barrier;
 
 void fizzbuzz_init ( int n ) {
     count = n;
@@ -24,8 +24,9 @@ void fizzbuzz_init ( int n ) {
     fizz_sem = malloc(sizeof(sem_t));
     buzz_sem = malloc(sizeof(sem_t));
     fizzbuzz_sem = malloc(sizeof(sem_t));
-    mutex = malloc(sizeof(sem_t));
-    if (num_sem == NULL || fizz_sem == NULL || buzz_sem == NULL || fizzbuzz_sem == NULL || mutex == NULL) {
+    barrier = malloc( sizeof(barrier_t));
+    barrier_init();
+    if (num_sem == NULL || fizz_sem == NULL || buzz_sem == NULL || fizzbuzz_sem == NULL) {
         fprintf(stderr, "Error allocating memory for semaphores.\n");
         exit(1);
     }
@@ -33,12 +34,16 @@ void fizzbuzz_init ( int n ) {
     sem_init(fizz_sem, 0, 0);
     sem_init(buzz_sem, 0, 0);
     sem_init(fizzbuzz_sem, 0, 0);
-    sem_init(mutex, 0, 0);
 }
 
 void num_thread( int n, void (*print_num)(int) ) {
-    for (int i = 1; i <= n; i++) {
-        sem_wait(mutex);
+    for (int i = 1; i <= n + 1; i++) {
+        if (i > n) {
+            sem_post(fizz_sem);
+            sem_post(buzz_sem);
+            sem_post(fizzbuzz_sem);
+            break;
+        }
         sem_wait(num_sem);
         if (i % 3 == 0 && i % 5 == 0) {
             sem_post(fizzbuzz_sem);
@@ -50,44 +55,41 @@ void num_thread( int n, void (*print_num)(int) ) {
             print_num(i);
             sem_post(num_sem);
         }
-        sem_post(mutex);
     }
+    barrier_wait(barrier);
 }
 
 void fizz_thread( int n, void (*print_fizz)(void) ) {
     for (int i = 1; i <= n; i++) {
-        sem_wait(mutex);
         if (i % 3 == 0) {
             sem_wait(fizz_sem);
             print_fizz();
             sem_post(num_sem);
         }
-        sem_post(mutex);
     }
+    barrier_wait(barrier);
 }
 
 void buzz_thread( int n, void (*print_buzz)(void) ) {
     for (int i = 1; i <= n; i++) {
-        sem_wait(mutex);
         if (i % 5 == 0) {
             sem_wait(buzz_sem);
             print_buzz();
             sem_post(num_sem);
         }
-        sem_post(mutex);
     }
+    barrier_wait(barrier);
 }
 
 void fizzbuzz_thread( int n, void (*print_fizzbuzz)(void) ) {
     for (int i = 1; i <= n; i++) {
-        sem_wait(mutex);
         if (i % 3 == 0 && i % 5 == 0) {
             sem_wait(fizzbuzz_sem);
             print_fizzbuzz();
             sem_post(num_sem);
         }
-        sem_post(mutex);
     }
+    barrier_wait(barrier);
 }
 
 void fizzbuzz_destroy() {
@@ -95,4 +97,5 @@ void fizzbuzz_destroy() {
     free(fizz_sem);
     free(buzz_sem);
     free(fizzbuzz_sem);
+    barrier_destroy();
 }
