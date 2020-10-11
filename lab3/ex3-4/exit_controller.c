@@ -14,6 +14,7 @@ void exit_controller_init(exit_controller_t *exit_controller, int no_of_prioriti
     exit_controller->low_priority_mutex = malloc(sizeof(sem_t));
     exit_controller->line_empty = 1;
     exit_controller->high_priority_count = 0;
+    exit_controller->low_priority_count = 0;
     if (exit_controller->mutex == NULL ||
         exit_controller->high_priority_mutex == NULL ||
         exit_controller->low_priority_mutex == NULL) {
@@ -28,8 +29,17 @@ void exit_controller_init(exit_controller_t *exit_controller, int no_of_prioriti
 void exit_controller_wait(exit_controller_t *exit_controller, int priority) {
     sem_wait(exit_controller->mutex);
     if (exit_controller->line_empty) {
-        exit_controller->line_empty = 0;
-        sem_post(exit_controller->mutex);
+        printf("         Here: Priority %d Count %d\n", priority, exit_controller->high_priority_count);
+        if (priority > 0 && exit_controller->high_priority_count > 0) {
+            exit_controller->low_priority_count++;
+            sem_post(exit_controller->mutex);
+            sem_wait(exit_controller->low_priority_mutex);
+            printf("         Fuck: Priority %d Count %d\n", priority, exit_controller->high_priority_count);
+        } else {
+            exit_controller->line_empty = 0;
+            sem_post(exit_controller->mutex);
+        }
+
     } else {
         sem_post(exit_controller->mutex);
         while (!exit_controller->line_empty) {
@@ -37,20 +47,25 @@ void exit_controller_wait(exit_controller_t *exit_controller, int priority) {
                 exit_controller->high_priority_count++;
                 sem_wait(exit_controller->high_priority_mutex);
             } else {
+                exit_controller->low_priority_count++;
                 sem_wait(exit_controller->low_priority_mutex);
             }
         }
-
     }
 }
 
 void exit_controller_post(exit_controller_t *exit_controller, int priority) {
     sem_wait(exit_controller->mutex);
     exit_controller->line_empty = 1;
+    printf("       Post: Count %d\n", exit_controller->high_priority_count);
     if (exit_controller->high_priority_count > 0) {
+        exit_controller->high_priority_count--;
         sem_post(exit_controller->high_priority_mutex);
     } else {
-        sem_post(exit_controller->low_priority_mutex);
+        if (exit_controller->low_priority_count > 0) {
+            exit_controller->low_priority_count--;
+            sem_post(exit_controller->low_priority_mutex);
+        }
     }
     sem_post(exit_controller->mutex);
 }

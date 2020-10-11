@@ -18,6 +18,7 @@ typedef struct exit_controller {
     sem_t *low_priority_mutex;
     int line_empty;
     int high_priority_count;
+    int low_priority_count;
 } exit_controller_t;
 
 void exit_controller_init(exit_controller_t *exit_controller, int no_of_priorities);
