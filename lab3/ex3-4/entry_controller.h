@@ -14,6 +14,12 @@
 
 typedef struct entry_controller {
     // define your variables here
+    sem_t *locks[5000];
+    int queue_head;
+    int queue_tail;
+    int no_of_bays;
+    int occupied_bays;
+    sem_t *mutex;
 } entry_controller_t;
 
 void entry_controller_init( entry_controller_t *entry_controller, int loading_bays );
