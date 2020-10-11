@@ -31,21 +31,23 @@ void exit_controller_wait(exit_controller_t *exit_controller, int priority) {
         exit_controller->line_empty = 0;
         sem_post(exit_controller->mutex);
     } else {
-        if (priority == 1) {
-            exit_controller->high_priority_count++;
-            sem_post(exit_controller->mutex);
-            sem_wait(exit_controller->high_priority_mutex);
-        } else {
-            sem_post(exit_controller->mutex);
-            sem_wait(exit_controller->low_priority_mutex);
+        sem_post(exit_controller->mutex);
+        while (!exit_controller->line_empty) {
+            if (priority == 0) {
+                exit_controller->high_priority_count++;
+                sem_wait(exit_controller->high_priority_mutex);
+            } else {
+                sem_wait(exit_controller->low_priority_mutex);
+            }
         }
+
     }
 }
 
 void exit_controller_post(exit_controller_t *exit_controller, int priority) {
     sem_wait(exit_controller->mutex);
     exit_controller->line_empty = 1;
-    if (exit_controller->high_priority_count > 1) {
+    if (exit_controller->high_priority_count > 0) {
         sem_post(exit_controller->high_priority_mutex);
     } else {
         sem_post(exit_controller->low_priority_mutex);
