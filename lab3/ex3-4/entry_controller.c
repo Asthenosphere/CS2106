@@ -37,13 +37,13 @@ void entry_controller_wait( entry_controller_t *entry_controller ) {
         sem_post(entry_controller->mutex);
     } else {
         turn = entry_controller->queue_tail;
-        entry_controller->queue_tail++;
+        entry_controller->queue_tail = (entry_controller->queue_tail + 1) % 5000;
         sem_post(entry_controller->mutex);
         while (1) {
             sem_wait(entry_controller->locks[turn]);
             sem_wait(entry_controller->mutex);
             if (turn == entry_controller->queue_head) {
-                entry_controller->queue_head++;
+                entry_controller->queue_head = (entry_controller->queue_head + 1) % 5000;
                 sem_post(entry_controller->mutex);
                 break;
             } else {
