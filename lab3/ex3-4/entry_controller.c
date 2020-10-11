@@ -37,6 +37,7 @@ void entry_controller_wait( entry_controller_t *entry_controller ) {
         sem_post(entry_controller->mutex);
     } else {
         turn = entry_controller->queue_tail++;
+        sem_post(entry_controller->mutex);
         while (1) {
             sem_wait(entry_controller->locks[turn]);
             sem_wait(entry_controller->mutex);
@@ -58,6 +59,9 @@ void entry_controller_post( entry_controller_t *entry_controller ) {
 }
 
 void entry_controller_destroy( entry_controller_t *entry_controller ) {
-
+    free(entry_controller->mutex);
+    for (int i = 0; i < 5000; i++) {
+        free(entry_controller->locks[i]);
+    }
 }
 
