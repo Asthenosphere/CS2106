@@ -17,6 +17,7 @@ typedef struct exit_controller {
     sem_t *locks[50];
     int frequencies[50];
     int line_empty;
+    int no_of_priorities;
 } exit_controller_t;
 
 void exit_controller_init(exit_controller_t *exit_controller, int no_of_priorities);

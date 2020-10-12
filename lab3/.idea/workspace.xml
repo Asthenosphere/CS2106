@@ -11,10 +11,8 @@
   <component name="ChangeListManager">
     <list default="true" id="1f92d031-2fdc-4c1a-adf4-9de2281423ac" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/../lab2/sm.c" beforeDir="false" afterPath="$PROJECT_DIR$/../lab2/sm.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ex1-2/barrier.c" beforeDir="false" afterPath="$PROJECT_DIR$/ex1-2/barrier.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ex1-2/fizzbuzz_workers.c" beforeDir="false" afterPath="$PROJECT_DIR$/ex1-2/fizzbuzz_workers.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ex5/train_runner.c" beforeDir="false" afterPath="$PROJECT_DIR$/ex5/train_runner.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ex3-4/exit_controller.c" beforeDir="false" afterPath="$PROJECT_DIR$/ex3-4/exit_controller.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ex3-4/exit_controller.h" beforeDir="false" afterPath="$PROJECT_DIR$/ex3-4/exit_controller.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,7 +59,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1601559667371</updated>
-      <workItem from="1601559668742" duration="28645000" />
+      <workItem from="1601559668742" duration="28927000" />
     </task>
     <servers />
   </component>

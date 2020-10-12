@@ -11,6 +11,7 @@
 void exit_controller_init(exit_controller_t *exit_controller, int no_of_priorities) {
     exit_controller->mutex = malloc(sizeof(sem_t));
     exit_controller->line_empty = 1;
+    exit_controller->no_of_priorities = no_of_priorities;
     if (exit_controller->mutex == NULL) {
         fprintf(stderr, "Error allocating memory for semaphores.\n");
         exit(1);
