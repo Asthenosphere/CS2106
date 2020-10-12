@@ -73,4 +73,5 @@ void exit_controller_post(exit_controller_t *exit_controller, int priority) {
 void exit_controller_destroy(exit_controller_t *exit_controller){
     free(exit_controller->low_priority_mutex);
     free(exit_controller->high_priority_mutex);
+    free(exit_controller->mutex);
 }
