@@ -69,22 +69,27 @@ void exit_controller_wait(exit_controller_t *exit_controller, int priority) {
 void exit_controller_post(exit_controller_t *exit_controller, int priority) {
     sem_wait(exit_controller->mutex);
     exit_controller->line_empty = 1;
-    int is_higher_priority_waiting = 0;
-    int next_highest_priority_index = priority;
+    int next_highest_priority_index = -1;
     for (int i = 0; i < priority; i++) {
         if (exit_controller->frequencies[i] > 0) {
-            is_higher_priority_waiting = 1;
             next_highest_priority_index = i;
             break;
         }
     }
-    if (exit_controller->frequencies[next_highest_priority_index] > 0) {
+    if (next_highest_priority_index != priority) {
         exit_controller->frequencies[next_highest_priority_index]--;
         sem_post(exit_controller->locks[next_highest_priority_index]);
     } else {
-        if (exit_controller->frequencies[priority] > 0) {
-            exit_controller->frequencies[priority]--;
-            sem_post(exit_controller->locks[priority]);
+        next_highest_priority_index = -1;
+        for (int i = priority; i < 50; i++) {
+            if (exit_controller->frequencies[i] > 0) {
+                next_highest_priority_index = i;
+                break;
+            }
+        }
+        if (next_highest_priority_index != -1) {
+            exit_controller->frequencies[next_highest_priority_index]--;
+            sem_post(exit_controller->locks[next_highest_priority_index]);
         }
     }
     sem_post(exit_controller->mutex);
