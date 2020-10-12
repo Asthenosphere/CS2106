@@ -70,10 +70,6 @@ void exit_controller_post(exit_controller_t *exit_controller, int priority) {
     sem_wait(exit_controller->mutex);
     exit_controller->line_empty = 1;
     int next_highest_priority_index = -1;
-    for (int i = 0; i < 50; i++) {
-        printf("%d ", exit_controller->frequencies[i]);
-    }
-    printf("\n");
     for (int i = 0; i < priority; i++) {
         if (exit_controller->frequencies[i] > 0) {
             next_highest_priority_index = i;
