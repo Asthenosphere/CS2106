@@ -99,7 +99,7 @@ void* run_thread( void* task ) {
   }
 
   thread_task->thread_return = 0;
-  pthread_exit(0);
+  return 0;
 }
 
 void print_num( int n ) {

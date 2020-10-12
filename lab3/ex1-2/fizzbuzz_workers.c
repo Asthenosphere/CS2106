@@ -104,4 +104,5 @@ void fizzbuzz_destroy() {
     free(buzz_sem);
     free(fizzbuzz_sem);
     barrier_destroy(barrier);
+    free(barrier);
 }

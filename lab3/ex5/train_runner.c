@@ -69,7 +69,7 @@ int main ( int argc, char *argv[] ) {
   // initialise exit_controller
   exit_controller_t *common_exit_controller = malloc(sizeof(exit_controller_t));
   ensure_successful_malloc( common_exit_controller );
-  exit_controller_init( common_exit_controller, 2 );
+  exit_controller_init( common_exit_controller, no_of_priorities );
 
   // start each task
   pthread_t threads[n_trains];
