@@ -1,8 +1,8 @@
 /*************************************
 * Lab 4
-* Name:
-* Student No:
-* Lab Group:
+* Name: Wang Luo
+* Student No: A0180092L
+* Lab Group: B09
 *************************************/
 
 #include <stdio.h>
