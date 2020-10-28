@@ -23,7 +23,9 @@ void *mmf_create_or_open(const char *name, size_t sz) {
 
     ftruncate(fd, sz);
 
-    char * file_in_mem = mmap(NULL, sz, PROT_READ, MAP_PRIVATE, fd, 0);
+    char * addr = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+    return addr;
 }
 
 void mmf_close(void *ptr, size_t sz) {
