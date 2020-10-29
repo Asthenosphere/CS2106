@@ -5,22 +5,57 @@
 * Lab Group:
 *************************************/
 
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include "shmheap.h"
 
 shmheap_memory_handle shmheap_create(const char *name, size_t len) {
-    /* TODO */
+    int shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
+
+    ftruncate(shm_fd, len);
+
+    void *ptr = mmap(NULL, len, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
+
+    struct shmheap_memory_handle handle = malloc(sizeof(struct shmheap_memory_handle));
+    handle.shmheap_id = shm_fd;
+    handle.size = len;
+    handle.ptr = ptr;
+
+    return handle;
 }
 
 shmheap_memory_handle shmheap_connect(const char *name) {
-    /* TODO */
+    int shm_fd;
+
+    shm_fd = shm_open(name, O_RDWR, 0666);
+
+    struct stat st;
+    fstat(shm_fd, &st);
+
+    struct shmheap_memory_handle handle = malloc(sizeof(struct shmheap_memory_handle));
+    handle.shmheap_id = shm_fd;
+    handle.size = st;
+
+    void *ptr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
+
+    struct shmheap_memory_handle handle = malloc(sizeof(struct shmheap_memory_handle));
+    handle.shmheap_id = shm_fd;
+    handle.size = len;
+    handle.ptr = ptr;
+
+    return handle;
 }
 
 void shmheap_disconnect(shmheap_memory_handle mem) {
-    /* TODO */
+    munmap(mem.ptr, mem.size);
 }
 
 void shmheap_destroy(const char *name, shmheap_memory_handle mem) {
-    /* TODO */
+    munmap(mem.ptr, mem.size);
+    shm_unlink(name);
 }
 
 void *shmheap_underlying(shmheap_memory_handle mem) {
