@@ -37,9 +37,9 @@ shmheap_memory_handle shmheap_connect(const char *name) {
 
     void *ptr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
 
-    shmheap_memory_handle *handle = malloc(sizeof(struct shmheap_memory_handle));
+    shmheap_memory_handle *handle = malloc(sizeof(shmheap_memory_handle));
     handle->shmheap_id = shm_fd;
-    handle->size = st;
+    handle->size = st.st_size;
     handle->ptr = ptr;
 
     return *handle;
@@ -59,7 +59,7 @@ void *shmheap_underlying(shmheap_memory_handle mem) {
 }
 
 void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
-    /* TODO */
+    return mem.ptr + sz + mem.curr;
 }
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {

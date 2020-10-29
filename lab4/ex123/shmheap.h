@@ -22,6 +22,7 @@ typedef struct {
     int shmheap_id;
     void * ptr;
     size_t size;
+    int curr;
 } shmheap_memory_handle;
 typedef struct {} shmheap_object_handle;
 
