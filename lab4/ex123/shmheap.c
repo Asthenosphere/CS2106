@@ -83,11 +83,16 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
     if (bookkeep_ptr->end == mem.size) {
         if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
+            char *p = (char *) mem.ptr;
             bookkeep_ptr->end = round_up(bookkeep_ptr->start + sz);
+            int end = bookkeep_ptr->end;
             bookkeep_ptr->free = 0;
-            (bookkeep_ptr + next)->start = bookkeep_ptr->end + sizeof(bookkeep) + 4;
-            (bookkeep_ptr + next)->end = mem.size;
-            (bookkeep_ptr + next)->free = 0;
+
+            p += end;
+            bookkeep  *next_seg = (bookkeep *) p;
+            next_seg->start = end + sizeof(bookkeep) + 4;
+            next_seg->end = mem.size;
+            next_seg->free = 1;
             return mem.ptr + next;
         } else {
             perror("Not enough space.");
@@ -97,11 +102,16 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
     while (1) {
         if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
+            char *p = (char *) mem.ptr;
             bookkeep_ptr->end = round_up(bookkeep_ptr->start + sz);
+            int end = bookkeep_ptr->end;
             bookkeep_ptr->free = 0;
-            (bookkeep_ptr + next)->start = bookkeep_ptr->end + sizeof(bookkeep) + 4;
-            (bookkeep_ptr + next)->end = mem.size;
-            (bookkeep_ptr + next)->free = 0;
+
+            p += end;
+            bookkeep  *next_seg = (bookkeep *) p;
+            next_seg->start = end + sizeof(bookkeep) + 4;
+            next_seg->end = mem.size;
+            next_seg->free = 1;
             return mem.ptr + next;
         }
         if (bookkeep_ptr->end >= mem.size) {
