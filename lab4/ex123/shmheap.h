@@ -1,8 +1,8 @@
 /*************************************
 * Lab 4
-* Name:
-* Student No:
-* Lab Group:
+* Name: Wang Luo
+* Student No: A0180092L
+* Lab Group: B09
 *************************************/
 
 #include <stddef.h>
@@ -19,11 +19,16 @@ requirements in the lab document.  If you declare additional names (helper struc
 */
 
 typedef struct {
+    int free;
+    int start;
+    int end;
+} bookkeep;
+typedef struct {
     int shmheap_id;
     void * ptr;
     size_t size;
     const char * name;
-    int offset;
+    //bookkeep * bookkeep;
 } shmheap_memory_handle;
 typedef struct {
     int shmheap_id;

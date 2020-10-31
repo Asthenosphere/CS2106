@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <stdio.h>
 #include "shmheap.h"
 
 shmheap_memory_handle shmheap_create(const char *name, size_t len) {
@@ -24,7 +25,17 @@ shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     handle->size = len;
     handle->ptr = ptr;
     handle->name = name;
-    handle->offset = 0;
+    /*
+    bookkeep *first = malloc(sizeof(bookkeep));
+    first->start = sizeof(bookkeep);
+    first->end = len;
+    first->free = 1;
+    handle->bookkeep = first;
+     */
+    bookkeep *bookkeep_ptr = (bookkeep *) ptr;
+    bookkeep_ptr->start = sizeof(bookkeep);
+    bookkeep_ptr->end = len;
+    bookkeep_ptr->free = 1;
 
     return *handle;
 }
@@ -46,7 +57,6 @@ shmheap_memory_handle shmheap_connect(const char *name) {
     handle->size = st.st_size;
     handle->ptr = ptr;
     handle->name = name;
-    handle->offset = 0;
 
     return *handle;
 }
@@ -61,15 +71,51 @@ void shmheap_destroy(const char *name, shmheap_memory_handle mem) {
 }
 
 void *shmheap_underlying(shmheap_memory_handle mem) {
-    /* TODO */
-}
-
-void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
     return mem.ptr;
 }
 
+void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
+    bookkeep *bookkeep_ptr = (bookkeep *) mem->ptr;
+    if (bookkeep_ptr->end == mem.size - 1) {
+        if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
+            int next = bookkeep_ptr->start;
+            (bookkeep_ptr + next)->start = bookkeep_ptr->end + 1 + sizeof(bookkeep);
+            (bookkeep_ptr + next)->end = mem.size;
+            return mem.ptr + next;
+        } else {
+            perror("Not enough space.");
+            exit(1);
+        }
+    }
+    while (bookkeep_ptr->end < mem.size - 1) {
+        if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
+            int next = bookkeep_ptr->start;
+            (bookkeep_ptr + next)->start = bookkeep_ptr->end + 1 + sizeof(bookkeep);
+            (bookkeep_ptr + next)->end = mem.size;
+            return mem.ptr + next;
+        }
+        bookkeep_ptr = bookkeep_ptr + (bookkeep_ptr->end + 1);
+    }
+
+    perror("Failed to allocate space.");
+    exit(1);
+}
+
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
-    /* TODO */
+    bookkeep *bookkeep_ptr = (bookkeep *) (ptr - sizeof(bookkeep));
+    bookkeep *current = (bookkeep *) mem.ptr;
+    bookkeep *previous = (bookkeep *) mem.ptr;
+    while (current->start != bookkeep_ptr->start) {
+        previous = current;
+        current += current->end - current->start;
+    }
+    if (previous->free) {
+        previous->end = current->end;
+    }
+    bookkeep *next = current + current->end - current->start;
+    if (next->free) {
+        current->end = next->end;
+    }
 }
 
 shmheap_object_handle shmheap_ptr_to_handle(shmheap_memory_handle mem, void *ptr) {
