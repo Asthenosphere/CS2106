@@ -78,6 +78,14 @@ void *shmheap_underlying(shmheap_memory_handle mem) {
     return mem.ptr;
 }
 
+void print_memory(shmheap_memory_handle mem) {
+    bookkeep *bookkeep_ptr = (bookkeep *) mem.ptr;
+    int i = 0;
+    while (i < 10) {
+        printf("Block %d: %d %d %d\n", ++i, bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
+    }
+}
+
 void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
     bookkeep *bookkeep_ptr = (bookkeep *) mem.ptr;
     if (bookkeep_ptr->end == mem.size) {
@@ -100,15 +108,12 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
         }
     }
     while (1) {
-        printf("%d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
-        if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
+        print_memory(mem);
+        if (bookkeep_ptr->end - bookkeep_ptr->start > sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
             char *p = (char *) mem.ptr;
             p += bookkeep_ptr->end;
             bookkeep *tmp = (bookkeep *) p;
-            if (tmp->free) {
-                bookkeep_ptr->end = round_up(bookkeep_ptr->start + sz);
-            }
             int end = bookkeep_ptr->end;
             bookkeep_ptr->free = 0;
 
@@ -147,6 +152,7 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
         current->end = next->end;
     }
     current->free = 1;
+    print_memory(mem);
 }
 
 shmheap_object_handle shmheap_ptr_to_handle(shmheap_memory_handle mem, void *ptr) {
