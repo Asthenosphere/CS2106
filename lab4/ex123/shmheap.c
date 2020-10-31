@@ -23,6 +23,8 @@ shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     handle->shmheap_id = shm_fd;
     handle->size = len;
     handle->ptr = ptr;
+    handle->name = name;
+    handle->offset = 0;
 
     return *handle;
 }
@@ -35,12 +37,16 @@ shmheap_memory_handle shmheap_connect(const char *name) {
     struct stat st;
     fstat(shm_fd, &st);
 
+    ftruncate(shm_fd, st.st_size);
+
     void *ptr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
 
     shmheap_memory_handle *handle = malloc(sizeof(shmheap_memory_handle));
     handle->shmheap_id = shm_fd;
     handle->size = st.st_size;
     handle->ptr = ptr;
+    hanle->name = name;
+    handle->offset = 0;
 
     return *handle;
 }
@@ -59,7 +65,7 @@ void *shmheap_underlying(shmheap_memory_handle mem) {
 }
 
 void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
-    return mem.ptr + sz + mem.curr;
+    return mem.ptr;
 }
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
@@ -67,9 +73,15 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
 }
 
 shmheap_object_handle shmheap_ptr_to_handle(shmheap_memory_handle mem, void *ptr) {
-    /* TODO */
+    shmheap_object_handle *handle = malloc(sizeof(shmheap_object_handle));
+
+    handle->ptr = ptr;
+    handle->shmheap_id = mem.shmheap_id;
+
+    return *handle;
 }
 
 void *shmheap_handle_to_ptr(shmheap_memory_handle mem, shmheap_object_handle hdl) {
-    /* TODO */
+    void *p = mem.ptr;
+    return p;
 }

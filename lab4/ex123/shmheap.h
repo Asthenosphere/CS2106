@@ -22,9 +22,13 @@ typedef struct {
     int shmheap_id;
     void * ptr;
     size_t size;
-    int curr;
+    const char * name;
+    int offset;
 } shmheap_memory_handle;
-typedef struct {} shmheap_object_handle;
+typedef struct {
+    int shmheap_id;
+    void * ptr;
+} shmheap_object_handle;
 
 
 /*
