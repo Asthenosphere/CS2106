@@ -139,6 +139,8 @@ shmheap_object_handle shmheap_ptr_to_handle(shmheap_memory_handle mem, void *ptr
 }
 
 void *shmheap_handle_to_ptr(shmheap_memory_handle mem, shmheap_object_handle hdl) {
-    void *p = mem.ptr;
-    return p;
+    char *p = (char *) mem.ptr;
+    p += sizeof(bookkeep) + 4;
+    void *ptr = (void *) p;
+    return ptr;
 }
