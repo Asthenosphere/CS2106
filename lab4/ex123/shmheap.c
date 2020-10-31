@@ -13,10 +13,6 @@
 #include <stdio.h>
 #include "shmheap.h"
 
-int round_up(int x) {
-    return ((x + 7) & (-8));
-}
-
 shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     int shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
 
@@ -96,7 +92,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
         if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
             char *p = (char *) mem.ptr;
-            bookkeep_ptr->end = round_up(bookkeep_ptr->start + sz);
+            bookkeep_ptr->end = (bookkeep_ptr->start + sz + 7) / 8 * 8;
             int end = bookkeep_ptr->end;
             bookkeep_ptr->free = 0;
 
@@ -115,7 +111,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
         if (bookkeep_ptr->end - bookkeep_ptr->start > sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
             char *p = (char *) mem.ptr;
-            bookkeep_ptr->end = round_up(bookkeep_ptr->start + sz);
+            bookkeep_ptr->end = (bookkeep_ptr->start + sz + 7) / 8 * 8;
             p += bookkeep_ptr->end;
             int end = bookkeep_ptr->end;
             bookkeep_ptr->free = 0;
