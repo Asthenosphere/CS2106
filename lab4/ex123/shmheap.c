@@ -83,6 +83,9 @@ void print_memory(shmheap_memory_handle mem) {
     int i = 0;
     while (i < 10) {
         printf("Block %d: %d %d %d\n", ++i, bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
+        char *p = (char *) mem.ptr;
+        p += bookkeep_ptr->end;
+        bookkeep_ptr = (bookkeep *) p;
     }
 }
 
