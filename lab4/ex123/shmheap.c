@@ -100,6 +100,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
         }
     }
     while (1) {
+        printf("%d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
         if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
             char *p = (char *) mem.ptr;
