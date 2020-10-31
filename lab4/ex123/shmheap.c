@@ -45,7 +45,7 @@ shmheap_memory_handle shmheap_connect(const char *name) {
     handle->shmheap_id = shm_fd;
     handle->size = st.st_size;
     handle->ptr = ptr;
-    hanle->name = name;
+    handle->name = name;
     handle->offset = 0;
 
     return *handle;
