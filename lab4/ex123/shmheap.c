@@ -13,6 +13,10 @@
 #include <stdio.h>
 #include "shmheap.h"
 
+int round_up(int x) {
+    return ((x + 7) & (-8));
+}
+
 shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     int shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
 
@@ -79,7 +83,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
     if (bookkeep_ptr->end == mem.size) {
         if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
-            bookkeep_ptr->end = bookkeep_ptr->start + sz;
+            bookkeep_ptr->end = round_up(bookkeep_ptr->start + sz);
             bookkeep_ptr->free = 0;
             (bookkeep_ptr + next)->start = bookkeep_ptr->end + sizeof(bookkeep) + 4;
             (bookkeep_ptr + next)->end = mem.size;
@@ -93,22 +97,21 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
     while (1) {
         if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
-            bookkeep_ptr->end = bookkeep_ptr->start + sz;
+            bookkeep_ptr->end = round_up(bookkeep_ptr->start + sz);
             bookkeep_ptr->free = 0;
             (bookkeep_ptr + next)->start = bookkeep_ptr->end + sizeof(bookkeep) + 4;
             (bookkeep_ptr + next)->end = mem.size;
             (bookkeep_ptr + next)->free = 0;
             return mem.ptr + next;
         }
-        if (bookkeep_ptr->end + 1 > mem.size) {
+        if (bookkeep_ptr->end >= mem.size) {
             perror("Not enough space.");
             exit(1);
         }
-        bookkeep_ptr = bookkeep_ptr + (bookkeep_ptr->end + 1);
+        char *p = (char *) mem.ptr;
+        p += bookkeep_ptr->end;
+        bookkeep_ptr = (bookkeep *) p;
     }
-
-    perror("Failed to allocate space.");
-    exit(1);
 }
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
