@@ -125,7 +125,9 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
 }
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
-    bookkeep *bookkeep_ptr = (bookkeep *) ptr;
+    char *p = (char *) ptr;
+    p -= (sizeof(bookkeep) + 4);
+    bookkeep *bookkeep_ptr = (bookkeep *) p;
     bookkeep *current = (bookkeep *) mem.ptr;
     bookkeep *previous = (bookkeep *) mem.ptr;
     while (current->start != bookkeep_ptr->start) {
