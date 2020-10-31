@@ -33,7 +33,7 @@ shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     handle->bookkeep = first;
      */
     bookkeep *bookkeep_ptr = (bookkeep *) ptr;
-    bookkeep_ptr->start = sizeof(bookkeep);
+    bookkeep_ptr->start = sizeof(bookkeep) + 4;
     bookkeep_ptr->end = len;
     bookkeep_ptr->free = 1;
 
@@ -79,7 +79,9 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
     if (bookkeep_ptr->end == mem.size) {
         if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
-            (bookkeep_ptr + next)->start = bookkeep_ptr->end + 1 + sizeof(bookkeep);
+            bookkeep_ptr->end = bookkeep_ptr->start + sz;
+            bookkeep_ptr->free = 0;
+            (bookkeep_ptr + next)->start = bookkeep_ptr->end + sizeof(bookkeep) + 4;
             (bookkeep_ptr + next)->end = mem.size;
             (bookkeep_ptr + next)->free = 0;
             return mem.ptr + next;
@@ -88,13 +90,19 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
             exit(1);
         }
     }
-    while (bookkeep_ptr->end < mem.size - 1) {
+    while (1) {
         if (bookkeep_ptr->end - bookkeep_ptr->start >= sz && bookkeep_ptr->free) {
             int next = bookkeep_ptr->start;
-            (bookkeep_ptr + next)->start = bookkeep_ptr->end + 1 + sizeof(bookkeep);
+            bookkeep_ptr->end = bookkeep_ptr->start + sz;
+            bookkeep_ptr->free = 0;
+            (bookkeep_ptr + next)->start = bookkeep_ptr->end + sizeof(bookkeep) + 4;
             (bookkeep_ptr + next)->end = mem.size;
             (bookkeep_ptr + next)->free = 0;
             return mem.ptr + next;
+        }
+        if (bookkeep_ptr->end + 1 > mem.size) {
+            perror("Not enough space.");
+            exit(1);
         }
         bookkeep_ptr = bookkeep_ptr + (bookkeep_ptr->end + 1);
     }
@@ -104,7 +112,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
 }
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
-    bookkeep *bookkeep_ptr = (bookkeep *) (ptr - sizeof(bookkeep));
+    bookkeep *bookkeep_ptr = (bookkeep *) ptr;
     bookkeep *current = (bookkeep *) mem.ptr;
     bookkeep *previous = (bookkeep *) mem.ptr;
     while (current->start != bookkeep_ptr->start) {
