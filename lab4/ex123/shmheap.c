@@ -90,6 +90,11 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
         if (bookkeep_ptr->free && (bookkeep_ptr->end - bookkeep_ptr->start >= sz)) {
             char *p = (char *) mem.ptr;
             p += bookkeep_ptr->end;
+            if (sz % 8 != 0) {
+                p += (bookkeep_ptr->start + sz + 7) / 8 * 8;
+            } else {
+                p += bookkeep_ptr->start + sz;
+            }
             printf("Alloc bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
             if (bookkeep_ptr->end - bookkeep_ptr->start > sz + sizeof(bookkeep)) {
                 bookkeep *next_seg = (bookkeep *) p;
@@ -101,8 +106,10 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
                 next_seg->end = bookkeep_ptr->end;
                 bookkeep_ptr->end = next_seg->start - sizeof(bookkeep);
                 next_seg->free = 1;
+                printf("Next seg: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
             }
             bookkeep_ptr->free = 0;
+            printf("Alloc bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
             p = (char *) mem.ptr;
             sem_post(p_mutex);
             return (void *) (p + bookkeep_ptr->start);
