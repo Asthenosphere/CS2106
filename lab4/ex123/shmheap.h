@@ -22,6 +22,7 @@ typedef struct {
     int free;
     int start;
     int end;
+    int terminal;
 } bookkeep;
 typedef struct {
     int shmheap_id;
