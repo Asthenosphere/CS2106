@@ -33,13 +33,11 @@ shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     first->free = 1;
     handle->bookkeep = first;
      */
-    sem_t *mutex = (sem_t *) ptr;
-    sem_init(mutex, 0, 1);
-    char *p = (char *) ptr;
-    p += sizeof(sem_t);
+    shmheap_head * head = (shmheap_head *) ptr;
+    sem_init(&(head->mutex), 0, 1);
 
-    bookkeep *bookkeep_ptr = (bookkeep *) p;
-    bookkeep_ptr->start = sizeof(bookkeep) + sizeof(sem_t);
+    bookkeep *bookkeep_ptr = &(head->bookkeep_first);
+    bookkeep_ptr->start = sizeof(shmheap_head);
     bookkeep_ptr->end = len;
     bookkeep_ptr->free = 1;
 

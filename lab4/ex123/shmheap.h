@@ -26,6 +26,10 @@ typedef struct {
     int terminal;
 } bookkeep;
 typedef struct {
+    sem_t mutex;
+    bookkeep bookkeep_first;
+} shmheap_head;
+typedef struct {
     int shmheap_id;
     void * ptr;
     size_t size;
