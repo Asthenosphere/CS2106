@@ -79,8 +79,8 @@ void *shmheap_underlying(shmheap_memory_handle mem) {
 }
 
 void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
-    sem_t *p_mutex = (sem_t *) mem.ptr;
-    sem_wait(p_mutex);
+    shmheap_head * head = (shmheap_head *) mem.ptr;
+    sem_wait(&(head->mutex));
     char *tmp = (char *) mem.ptr;
     tmp += sizeof(sem_t);
     bookkeep *bookkeep_ptr = (bookkeep *) tmp;
@@ -108,7 +108,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
             bookkeep_ptr->free = 0;
             printf("Alloc bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
             p = (char *) mem.ptr;
-            sem_post(p_mutex);
+            sem_post(&(head->mutex));
             return (void *) (p + bookkeep_ptr->start);
         } else {
             char *p = (char *) mem.ptr;
@@ -135,7 +135,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
 
             p = (char *) mem.ptr;
             p += bookkeep_ptr->start;
-            sem_post(p_mutex);
+            sem_post(&(head->mutex));
             return (void *) p;
         } else {
             perror("Not enough space.");
@@ -147,9 +147,9 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
 }
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
-    sem_t *p_mutex = (sem_t *) mem.ptr;
+    shmheap_head * head = (shmheap_head *) mem.ptr;
     printf("Before acquiring mutex\n");
-    if (sem_wait(p_mutex) == -1) {
+    if (sem_wait(&(head->mutex)) == -1) {
         fprintf(stderr, "Failed to lock semaphore\n");
         exit(1);
     }
@@ -169,7 +169,7 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
             current->end = next_seg->end;
         }
         current->free = 1;
-        sem_post(p_mutex);
+        sem_post(&(head->mutex));
         return;
     }
 
@@ -200,12 +200,9 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
         if (current->free) {
             bookkeep_ptr->end = current->end;
         }
-	bookkeep_ptr->free = 1;
-	sem_t *please = (sem_t *) mem.ptr;
-
-	printf("Status %d\n", sem_post(please));
-	
-	return;
+        bookkeep_ptr->free = 1;
+        sem_post(&(head->mutex));
+        return;
     }
 
     bookkeep_ptr->free = 1;
