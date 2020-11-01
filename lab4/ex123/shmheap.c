@@ -190,7 +190,7 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
 	printf("In if\n");
         current->end = bookkeep_ptr->end;
     } else {
-	printf("In else\n");
+	    printf("In else\n");
         printf("Bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
         printf("Current: %d %d %d\n", current->start, current->end, current->free);
         char *tmp = (char *) mem.ptr;
@@ -206,7 +206,7 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
     }
 
     bookkeep_ptr->free = 1;
-    if (sem_post(p_mutex) == -1) {
+    if (sem_post(&(head->mutex)) == -1) {
         fprintf(stderr, "Failed to unlock mutex\n");
         exit(1);
     }
