@@ -89,7 +89,6 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
     while (bookkeep_ptr->end != mem.size) {
         if (bookkeep_ptr->free && (bookkeep_ptr->end - bookkeep_ptr->start >= sz)) {
             char *p = (char *) mem.ptr;
-            p += bookkeep_ptr->end;
             if (sz % 8 != 0) {
                 p += (bookkeep_ptr->start + sz + 7) / 8 * 8;
             } else {
