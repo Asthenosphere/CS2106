@@ -33,12 +33,15 @@ shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     first->free = 1;
     handle->bookkeep = first;
      */
-    bookkeep *bookkeep_ptr = (bookkeep *) ptr;
-    bookkeep_ptr->start = sizeof(bookkeep);
+    sem_t *mutex = (sem_t *) ptr;
+    sem_init(mutex, 0, 1);
+    char *p = (char *) ptr;
+    p += sizeof(sem_t);
+
+    bookkeep *bookkeep_ptr = (bookkeep *) p;
+    bookkeep_ptr->start = sizeof(bookkeep) + sizeof(sem_t);
     bookkeep_ptr->end = len;
     bookkeep_ptr->free = 1;
-    bookkeep_ptr->mutex = malloc(sizeof(sem_t));
-    sem_init(bookkeep_ptr->mutex, 0, 1);
 
     return *handle;
 }
@@ -90,8 +93,11 @@ void print_memory(shmheap_memory_handle mem) {
 
 void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
     //print_memory(mem);
-    bookkeep *bookkeep_ptr = (bookkeep *) mem.ptr;
-    sem_wait(bookkeep_ptr->mutex);
+    sem_t *p_mutex = (sem_t *) mem.ptr;
+    sem_wait(p_mutex);
+    char *tmp = (char *) mem.ptr;
+    tmp += sizeof(sem_t);
+    bookkeep *bookkeep_ptr = (bookkeep *) tmp;
     while (bookkeep_ptr->end != mem.size) {
         if (bookkeep_ptr->free && (bookkeep_ptr->end - bookkeep_ptr->start >= sz)) {
             char *p = (char *) mem.ptr;
@@ -110,7 +116,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
             bookkeep_ptr->free = 0;
             p = (char *) mem.ptr;
             bookkeep * head = (bookkeep *) mem.ptr;
-            sem_post(head->mutex);
+            sem_post(p_mutex);
             return (void *) (p + bookkeep_ptr->start);
         } else {
             char *p = (char *) mem.ptr;
@@ -138,7 +144,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
             p = (char *) mem.ptr;
             p += bookkeep_ptr->start;
             bookkeep * head = (bookkeep *) mem.ptr;
-            sem_post(head->mutex);
+            sem_post(p_mutex);
             return (void *) p;
         } else {
             perror("Not enough space.");
@@ -150,8 +156,8 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
 }
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
-    bookkeep * head = (bookkeep *) mem.ptr;
-    sem_wait(head->mutex);
+    sem_t *p_mutex = (sem_t *) mem.ptr;
+    sem_wait(p_mutex);
     char *p = (char *) ptr;
     p -= sizeof(bookkeep);
     bookkeep *bookkeep_ptr = (bookkeep *) p;
@@ -178,7 +184,7 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
 
     bookkeep_ptr->free = 1;
     //print_memory(mem);
-    sem_post(head->mutex);
+    sem_post(p_mutex);
 }
 
 shmheap_object_handle shmheap_ptr_to_handle(shmheap_memory_handle mem, void *ptr) {

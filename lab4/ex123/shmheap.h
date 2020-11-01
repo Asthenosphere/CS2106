@@ -23,7 +23,7 @@ typedef struct {
     int start;
     int end;
     int free;
-    sem_t * mutex;
+    int terminal;
 } bookkeep;
 typedef struct {
     int shmheap_id;
