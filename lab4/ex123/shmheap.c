@@ -150,6 +150,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
     sem_t *p_mutex = (sem_t *) mem.ptr;
+    printf("Before acquiring mutex\n");
     sem_wait(p_mutex);
     char *p_char = (char *) mem.ptr;
     p_char += sizeof(sem_t);
