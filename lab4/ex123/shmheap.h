@@ -19,9 +19,9 @@ requirements in the lab document.  If you declare additional names (helper struc
 */
 
 typedef struct {
-    int free;
     int start;
     int end;
+    int free;
     int terminal;
 } bookkeep;
 typedef struct {
