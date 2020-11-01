@@ -99,11 +99,11 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
                     next_seg->start = bookkeep_ptr->start + sz + sizeof(bookkeep);
                 }
                 next_seg->end = bookkeep_ptr->end;
+                bookkeep_ptr->end = next_seg->start - sizeof(bookkeep);
                 next_seg->free = 1;
             }
             bookkeep_ptr->free = 0;
             p = (char *) mem.ptr;
-            bookkeep * head = (bookkeep *) mem.ptr;
             sem_post(p_mutex);
             return (void *) (p + bookkeep_ptr->start);
         } else {
