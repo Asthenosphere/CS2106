@@ -6,6 +6,7 @@
 *************************************/
 
 #include <stddef.h>
+#include <semaphore.h>
 
 /*
 You should modify these structs to suit your implementation,
@@ -22,14 +23,13 @@ typedef struct {
     int start;
     int end;
     int free;
-    int terminal;
+    sem_t * mutex;
 } bookkeep;
 typedef struct {
     int shmheap_id;
     void * ptr;
     size_t size;
     const char * name;
-    //bookkeep * bookkeep;
 } shmheap_memory_handle;
 typedef struct {
     int shmheap_id;
