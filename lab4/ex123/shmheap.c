@@ -199,7 +199,10 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
     }
 
     bookkeep_ptr->free = 1;
-    sem_post(p_mutex);
+    if (sem_post(p_mutex) == -1) {
+        fprintf(stderr, "Failed to unlock mutex\n");
+        exit(1);
+    }
 }
 
 shmheap_object_handle shmheap_ptr_to_handle(shmheap_memory_handle mem, void *ptr) {
