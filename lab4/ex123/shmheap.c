@@ -37,7 +37,8 @@ shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     bookkeep_ptr->start = sizeof(bookkeep);
     bookkeep_ptr->end = len;
     bookkeep_ptr->free = 1;
-    bookkeep_ptr->mutex = malloc(sizeof(sizeof(sem_t)));
+    bookkeep_ptr->mutex = malloc(sizeof(sem_t));
+    sem_init(bookkeep_ptr->mutex, 0, 1);
 
     return *handle;
 }
@@ -177,7 +178,6 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
 
     bookkeep_ptr->free = 1;
     //print_memory(mem);
-    bookkeep * head = (bookkeep *) mem.ptr;
     sem_post(head->mutex);
 }
 
