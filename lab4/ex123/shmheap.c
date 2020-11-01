@@ -92,7 +92,7 @@ void print_memory(shmheap_memory_handle mem) {
 }
 
 void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
-    //print_memory(mem);
+    print_memory(mem);
     sem_t *p_mutex = (sem_t *) mem.ptr;
     sem_wait(p_mutex);
     char *tmp = (char *) mem.ptr;
@@ -102,7 +102,7 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
         if (bookkeep_ptr->free && (bookkeep_ptr->end - bookkeep_ptr->start >= sz)) {
             char *p = (char *) mem.ptr;
             p += bookkeep_ptr->end;
-
+            printf("Alloc bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
             if (bookkeep_ptr->end - bookkeep_ptr->start > sz + sizeof(bookkeep)) {
                 bookkeep *next_seg = (bookkeep *) p;
                 if (sz % 8 != 0) {
