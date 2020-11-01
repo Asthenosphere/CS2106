@@ -33,7 +33,7 @@ shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     handle->bookkeep = first;
      */
     bookkeep *bookkeep_ptr = (bookkeep *) ptr;
-    bookkeep_ptr->start = sizeof(bookkeep) + 4;
+    bookkeep_ptr->start = sizeof(bookkeep);
     bookkeep_ptr->end = len;
     bookkeep_ptr->free = 1;
     bookkeep_ptr->terminal = 1;
