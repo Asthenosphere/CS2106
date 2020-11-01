@@ -177,8 +177,8 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
     }
 
     while (current->end + sizeof(bookkeep) != bookkeep_ptr->start) {
-        //printf("Bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
-        //printf("Current: %d %d %d\n", current->start, current->end, current->free);
+        printf("Bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
+        printf("Current: %d %d %d\n", current->start, current->end, current->free);
         char *tmp = (char *) mem.ptr;
         tmp += current->end;
         current = (bookkeep *) tmp;
