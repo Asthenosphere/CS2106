@@ -155,6 +155,7 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
         fprintf(stderr, "Failed to lock semaphore\n");
         exit(1);
     }
+    printf("Acquired mutex\n");
     char *p_char = (char *) mem.ptr;
     p_char += sizeof(sem_t);
     char *p = (char *) ptr;
@@ -188,14 +189,25 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
     }
 
     if (current->free) {
+	printf("In if\n");
         current->end = bookkeep_ptr->end;
     } else {
+	printf("In else\n");
+        printf("Bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
+        printf("Current: %d %d %d\n", current->start, current->end, current->free);
         char *tmp = (char *) mem.ptr;
         tmp += bookkeep_ptr->end;
         current = (bookkeep *) tmp;
+        printf("Current: %d %d %d\n", current->start, current->end, current->free);
         if (current->free) {
             bookkeep_ptr->end = current->end;
         }
+	bookkeep_ptr->free = 1;
+	sem_t *please = (sem_t *) mem.ptr;
+
+	printf("Status %d\n", sem_post(please));
+	
+	return;
     }
 
     bookkeep_ptr->free = 1;
