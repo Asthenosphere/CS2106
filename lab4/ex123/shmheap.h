@@ -33,7 +33,6 @@ typedef struct {
     int shmheap_id;
     void * ptr;
     size_t size;
-    const char * name;
 } shmheap_memory_handle;
 typedef struct {
     int shmheap_id;

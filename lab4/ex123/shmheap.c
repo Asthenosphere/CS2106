@@ -25,7 +25,6 @@ shmheap_memory_handle shmheap_create(const char *name, size_t len) {
     handle->shmheap_id = shm_fd;
     handle->size = len;
     handle->ptr = ptr;
-    handle->name = name;
     char *p = (char *) ptr;
     p += sizeof(shmheap_memory_handle);
     shmheap_head * head = (shmheap_head *) p;
@@ -63,7 +62,6 @@ void shmheap_disconnect(shmheap_memory_handle mem) {
 void shmheap_destroy(const char *name, shmheap_memory_handle mem) {
     munmap(mem.ptr, mem.size);
     shm_unlink(name);
-    free(mem.ptr);
 }
 
 void *shmheap_underlying(shmheap_memory_handle mem) {
