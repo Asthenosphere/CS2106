@@ -52,7 +52,7 @@ shmheap_memory_handle shmheap_connect(const char *name) {
     void *ptr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
 
     shmheap_memory_handle *handle = (shmheap_memory_handle *) ptr;
-    
+
     return *handle;
 }
 
@@ -71,9 +71,11 @@ void *shmheap_underlying(shmheap_memory_handle mem) {
 }
 
 void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
-    shmheap_head * head = (shmheap_head *) mem.ptr;
+    char *hdl = (char *) mem.ptr;
+    hdl += sizeof(shmheap_memory_handle);
+    shmheap_head * head = (shmheap_head *) hdl;
     sem_wait(&(head->mutex));
-    char *tmp = (char *) mem.ptr;
+    char *tmp = (char *) hdl;
     tmp += sizeof(sem_t);
     bookkeep *bookkeep_ptr = (bookkeep *) tmp;
     while (bookkeep_ptr->end != mem.size) {
@@ -136,12 +138,14 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
 }
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
-    shmheap_head * head = (shmheap_head *) mem.ptr;
+    char *hdl = (char *) mem.ptr;
+    hdl += sizeof(shmheap_memory_handle);
+    shmheap_head * head = (shmheap_head *) hdl;
     if (sem_wait(&(head->mutex)) == -1) {
         fprintf(stderr, "Failed to lock semaphore\n");
         exit(1);
     }
-    char *p_char = (char *) mem.ptr;
+    char *p_char = (char *) hdl;
     p_char += sizeof(sem_t);
     char *p = (char *) ptr;
     p -= sizeof(bookkeep);
