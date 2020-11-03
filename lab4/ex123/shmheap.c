@@ -21,23 +21,18 @@ shmheap_memory_handle shmheap_create(const char *name, size_t len) {
 
     void *ptr = mmap(NULL, len, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
 
-    shmheap_memory_handle *handle = malloc(sizeof(shmheap_memory_handle));
+    shmheap_memory_handle *handle = (shmheap_memory_handle *) ptr;
     handle->shmheap_id = shm_fd;
     handle->size = len;
     handle->ptr = ptr;
     handle->name = name;
-    /*
-    bookkeep *first = malloc(sizeof(bookkeep));
-    first->start = sizeof(bookkeep);
-    first->end = len;
-    first->free = 1;
-    handle->bookkeep = first;
-     */
-    shmheap_head * head = (shmheap_head *) ptr;
+    char *p = (char *) ptr;
+    p += sizeof(shmheap_memory_handle);
+    shmheap_head * head = (shmheap_head *) p;
     sem_init(&(head->mutex), 1, 1);
 
     bookkeep *bookkeep_ptr = &(head->bookkeep_first);
-    bookkeep_ptr->start = sizeof(shmheap_head);
+    bookkeep_ptr->start = sizeof(shmheap_head) + sizeof(shmheap_memory_handle);
     bookkeep_ptr->end = len;
     bookkeep_ptr->free = 1;
 
@@ -56,12 +51,8 @@ shmheap_memory_handle shmheap_connect(const char *name) {
 
     void *ptr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
 
-    shmheap_memory_handle *handle = malloc(sizeof(shmheap_memory_handle));
-    handle->shmheap_id = shm_fd;
-    handle->size = st.st_size;
-    handle->ptr = ptr;
-    handle->name = name;
-
+    shmheap_memory_handle *handle = (shmheap_memory_handle *) ptr;
+    
     return *handle;
 }
 
@@ -93,7 +84,6 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
             } else {
                 p += bookkeep_ptr->start + sz;
             }
-            //printf("Alloc bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
             if (bookkeep_ptr->end - bookkeep_ptr->start > sz + sizeof(bookkeep)) {
                 bookkeep *next_seg = (bookkeep *) p;
                 if (sz % 8 != 0) {
@@ -104,10 +94,8 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
                 next_seg->end = bookkeep_ptr->end;
                 bookkeep_ptr->end = next_seg->start - sizeof(bookkeep);
                 next_seg->free = 1;
-                //printf("Next seg: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
             }
             bookkeep_ptr->free = 0;
-            //printf("Alloc bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
             p = (char *) mem.ptr;
             sem_post(&(head->mutex));
             return (void *) (p + bookkeep_ptr->start);
@@ -149,12 +137,10 @@ void *shmheap_alloc(shmheap_memory_handle mem, size_t sz) {
 
 void shmheap_free(shmheap_memory_handle mem, void *ptr) {
     shmheap_head * head = (shmheap_head *) mem.ptr;
-    //printf("Before acquiring mutex\n");
     if (sem_wait(&(head->mutex)) == -1) {
         fprintf(stderr, "Failed to lock semaphore\n");
         exit(1);
     }
-    //printf("Acquired mutex\n");
     char *p_char = (char *) mem.ptr;
     p_char += sizeof(sem_t);
     char *p = (char *) ptr;
@@ -176,8 +162,6 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
 
     int count = 0;
     while (current->end + sizeof(bookkeep) != bookkeep_ptr->start) {
-        //printf("Bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
-        //printf("Current: %d %d %d\n", current->start, current->end, current->free);
         if (count > 20) {
             exit(1);
         }
@@ -188,16 +172,11 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
     }
 
     if (current->free) {
-	//printf("In if\n");
         current->end = bookkeep_ptr->end;
     } else {
-	//    printf("In else\n");
-        //printf("Bookkeep: %d %d %d\n", bookkeep_ptr->start, bookkeep_ptr->end, bookkeep_ptr->free);
-        //printf("Current: %d %d %d\n", current->start, current->end, current->free);
         char *tmp = (char *) mem.ptr;
         tmp += bookkeep_ptr->end;
         current = (bookkeep *) tmp;
-        //printf("Current: %d %d %d\n", current->start, current->end, current->free);
         if (current->free) {
             bookkeep_ptr->end = current->end;
         }
