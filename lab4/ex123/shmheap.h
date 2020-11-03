@@ -20,8 +20,8 @@ requirements in the lab document.  If you declare additional names (helper struc
 */
 
 typedef struct {
-    int start;
-    int end;
+    size_t start;
+    size_t end;
     int free;
     int terminal;
 } bookkeep;

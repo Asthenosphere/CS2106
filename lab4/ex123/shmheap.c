@@ -72,6 +72,7 @@ void shmheap_disconnect(shmheap_memory_handle mem) {
 void shmheap_destroy(const char *name, shmheap_memory_handle mem) {
     munmap(mem.ptr, mem.size);
     shm_unlink(name);
+    free(mem.ptr);
 }
 
 void *shmheap_underlying(shmheap_memory_handle mem) {
