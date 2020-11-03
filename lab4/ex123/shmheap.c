@@ -195,12 +195,12 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
 }
 
 shmheap_object_handle shmheap_ptr_to_handle(shmheap_memory_handle mem, void *ptr) {
-    shmheap_object_handle *handle = malloc(sizeof(shmheap_object_handle));
+    shmheap_object_handle handle;
 
-    handle->ptr = ptr;
-    handle->shmheap_id = mem.shmheap_id;
+    handle.ptr = ptr;
+    handle.shmheap_id = mem.shmheap_id;
 
-    return *handle;
+    return handle;
 }
 
 void *shmheap_handle_to_ptr(shmheap_memory_handle mem, shmheap_object_handle hdl) {
