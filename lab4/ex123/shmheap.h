@@ -36,7 +36,7 @@ typedef struct {
 } shmheap_memory_handle;
 typedef struct {
     int shmheap_id;
-    void * ptr;
+    int offset;
 } shmheap_object_handle;
 
 

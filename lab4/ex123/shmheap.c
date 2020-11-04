@@ -197,12 +197,18 @@ void shmheap_free(shmheap_memory_handle mem, void *ptr) {
 shmheap_object_handle shmheap_ptr_to_handle(shmheap_memory_handle mem, void *ptr) {
     shmheap_object_handle handle;
 
-    handle.ptr = ptr;
+    char *p = (char *) ptr;
+    p -= sizeof(bookkeep);
+    bookkeep *bookkeep_ptr = (bookkeep *) p;
+
+    handle.offset = bookkeep_ptr->start;
     handle.shmheap_id = mem.shmheap_id;
 
     return handle;
 }
 
 void *shmheap_handle_to_ptr(shmheap_memory_handle mem, shmheap_object_handle hdl) {
-    return hdl.ptr;
+    char *p = (char *) mem.ptr;
+    p += hdl.offset;
+    return (void *) p;
 }
