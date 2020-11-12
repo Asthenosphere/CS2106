@@ -54,6 +54,8 @@ const char *zc_read_start(zc_file *file, size_t *size) {
   if (*size > file->size - file->offset) {
       *size = file->size - file->offset;
   }
+  printf("%zu %zu\n", file->offset, *size);
+  res += file->offset;
   res += *size;
   file->offset += *size;
   return res;
