@@ -22,13 +22,18 @@ struct zc_file {
 zc_file *zc_open(const char *path) {
   struct zc_file * file = malloc(sizeof(struct zc_file));
   file->fd = open(path, O_RDWR | O_CREAT);
-  if (file->fd != 0) {
+  if (file->fd < 0) {
       fprintf(stderr, "Error opening file");
       exit(1);
   }
   struct stat st;
   fstat(file->fd, &st);
-  char * addr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, file->fd, 0);
+  char * addr;
+  if (st.st_size == 0) {
+      addr = mmap(NULL, 1, PROT_WRITE | PROT_READ, MAP_PRIVATE, file->fd, 0);
+  } else {
+      addr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, file->fd, 0);
+  }
   file->ptr = addr;
   file->size = st.st_size;
   file->offset = 0;
@@ -37,7 +42,7 @@ zc_file *zc_open(const char *path) {
 
 int zc_close(zc_file *file) {
   int flag = munmap(file->ptr, file->size);
-  if (flag != 0) {
+  if (flag < 0) {
       return flag;
   }
   free(file);
@@ -46,6 +51,9 @@ int zc_close(zc_file *file) {
 
 const char *zc_read_start(zc_file *file, size_t *size) {
   char *res = file->ptr;
+  if (*size > file->size - file->offset) {
+      *size = file->size - file->offset;
+  }
   res += *size;
   file->offset += *size;
   return res;
