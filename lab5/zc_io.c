@@ -54,7 +54,6 @@ const char *zc_read_start(zc_file *file, size_t *size) {
   if (*size > file->size - file->offset) {
       *size = file->size - file->offset;
   }
-  printf("%zu %zu\n", file->offset, *size);
   res += file->offset;
   file->offset += *size;
   return res;
@@ -69,8 +68,14 @@ void zc_read_end(zc_file *file) {
  **************/
 
 char *zc_write_start(zc_file *file, size_t size) {
-  // To implement
-  return NULL;
+  char * addr;
+  if (size + file->offset > file->size) {
+    addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
+  } else {
+    addr = file->ptr;
+  }
+  addr += file->offset;
+  return addr;
 }
 
 void zc_write_end(zc_file *file) {
