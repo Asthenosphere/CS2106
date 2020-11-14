@@ -75,6 +75,7 @@ char *zc_write_start(zc_file *file, size_t size) {
   } else {
     addr = file->ptr;
   }
+  printf("File size: %zu Size: %zu Offset: %zu\n", file->size, size, file->offset);
   addr += file->offset;
   file->offset += size;
   return addr;
