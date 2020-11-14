@@ -55,7 +55,6 @@ int zc_close(zc_file *file) {
   close(file->fd);
   sem_destroy(&(file->mutex));
   sem_destroy(&(file->roomEmpty));
-  free(file->ptr);
   free(file);
   return 0;
 }
