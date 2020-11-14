@@ -21,7 +21,7 @@ struct zc_file {
 
 zc_file *zc_open(const char *path) {
   struct zc_file * file = malloc(sizeof(struct zc_file));
-  file->fd = open(path, O_RDWR | O_CREAT);
+  file->fd = open(path, O_RDWR | O_CREAT, 0666);
   if (file->fd < 0) {
       fprintf(stderr, "Error opening file");
       exit(1);
