@@ -14,8 +14,8 @@ struct zc_file {
   size_t size;
   size_t offset;
   int fd;
-  sem_t * mutex;
-  sem_t * roomEmpty;
+  sem_t mutex;
+  sem_t roomEmpty;
   int nReader;
 };
 
@@ -41,8 +41,8 @@ zc_file *zc_open(const char *path) {
   file->ptr = addr;
   file->size = st.st_size;
   file->offset = 0;
-  sem_init(file->mutex, 0, 1);
-  sem_init(file->roomEmpty, 0, 1);
+  sem_init(&(file->mutex), 0, 1);
+  sem_init(&(file->roomEmpty), 0, 1);
   file->nReader = 0;
   return file;
 }
@@ -122,18 +122,23 @@ void zc_write_end(zc_file *file) {
  **************/
 
 off_t zc_lseek(zc_file *file, long offset, int whence) {
+  sem_wait(file->roomEmpty);
   switch (whence) {
     case SEEK_SET:
       file->offset = offset;
-      return offset;
+      break;
     case SEEK_CUR:
       file->offset += offset;
-      return file->offset;
+      break;
     case SEEK_END:
       file->offset = file->size + offset;
-      return file->offset;
+      break;
+    default:
+      sem_post(file->roomEmpty);
+      return -1;
   }
-  return -1;
+  sem_post(file->roomEmpty);
+  return file->offset;
 }
 
 /**************
