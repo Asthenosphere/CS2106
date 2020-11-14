@@ -53,19 +53,19 @@ int zc_close(zc_file *file) {
       return flag;
   }
   close(file->fd);
-  sem_destroy(file->mutex);
-  sem_destroy(file->roomEmpty);
+  sem_destroy(&(file->mutex));
+  sem_destroy(&(file->roomEmpty));
   free(file);
   return 0;
 }
 
 const char *zc_read_start(zc_file *file, size_t *size) {
-  sem_wait(file->mutex);
+  sem_wait(&(file->mutex));
   file->nReader++;
   if (file->nReader == 1) {
-    sem_wait(file->roomEmpty);
+    sem_wait(&(file->roomEmpty));
   }
-  sem_post(file->mutex);
+  sem_post(&(file->mutex));
   char *res = file->ptr;
   if (*size > file->size - file->offset) {
       *size = file->size - file->offset;
@@ -76,12 +76,12 @@ const char *zc_read_start(zc_file *file, size_t *size) {
 }
 
 void zc_read_end(zc_file *file) {
-  sem_wait(file->mutex);
+  sem_wait(&(file->mutex));
   file->nReader--;
   if (file->nReader == 0) {
-    sem_post(file->roomEmpty);
+    sem_post(&(file->roomEmpty));
   }
-  sem_post(file->mutex);
+  sem_post(&(file->mutex));
 }
 
 /**************
@@ -89,7 +89,7 @@ void zc_read_end(zc_file *file) {
  **************/
 
 char *zc_write_start(zc_file *file, size_t size) {
-  sem_wait(file->roomEmpty);
+  sem_wait(&(file->roomEmpty));
   if (size + file->offset > file->size) {
     if (ftruncate(file->fd, file->offset + size) < 0) {
       fprintf(stderr, "Error truncating file");
@@ -114,7 +114,7 @@ char *zc_write_start(zc_file *file, size_t size) {
 
 void zc_write_end(zc_file *file) {
   msync(file->ptr, file->size, MS_SYNC);
-  sem_post(file->roomEmpty);
+  sem_post(&(file->roomEmpty));
 }
 
 /**************
@@ -122,7 +122,7 @@ void zc_write_end(zc_file *file) {
  **************/
 
 off_t zc_lseek(zc_file *file, long offset, int whence) {
-  sem_wait(file->roomEmpty);
+  sem_wait(&(file->roomEmpty));
   switch (whence) {
     case SEEK_SET:
       file->offset = offset;
@@ -134,10 +134,10 @@ off_t zc_lseek(zc_file *file, long offset, int whence) {
       file->offset = file->size + offset;
       break;
     default:
-      sem_post(file->roomEmpty);
+      sem_post(&(file->roomEmpty));
       return -1;
   }
-  sem_post(file->roomEmpty);
+  sem_post(&(file->roomEmpty));
   return file->offset;
 }
 
