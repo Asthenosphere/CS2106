@@ -146,6 +146,28 @@ off_t zc_lseek(zc_file *file, long offset, int whence) {
  **************/
 
 int zc_copyfile(const char *source, const char *dest) {
-  // To implement
-  return -1;
+  struct zc_file * file1 = zc_open(source);
+  struct zc_file * file2 = zc_open(dest);
+  struct stat st;
+
+  if (fstat(file1->fd, &st) == -1) {
+    fprintf(stderr, "Error getting file stats");
+    exit(1);
+  }
+
+  int len = st.st_size;
+  int ret;
+
+  do {
+    ret = copy_file_range(file1->fd, NULL, file2->fd, NULL, len, 0);
+    if (ret < 0) {
+      fprintf(stderr, "Error copying file");
+      exit(1);
+    }
+
+    len -= ret;
+  } while (len > 0 && ret > 0);
+
+  zc_close(file1);
+  return 0;
 }
