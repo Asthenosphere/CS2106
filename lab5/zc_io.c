@@ -70,7 +70,8 @@ void zc_read_end(zc_file *file) {
 char *zc_write_start(zc_file *file, size_t size) {
   if (size + file->offset > file->size) {
     ftruncate(file->fd, file->size + size);
-    file->ptr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
+    char *new_addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
+    file->ptr = new_addr;
     file->size = file->offset + size;
   }
 
