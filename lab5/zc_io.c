@@ -73,12 +73,12 @@ char *zc_write_start(zc_file *file, size_t size) {
       fprintf(stderr, "Error truncating file");
       exit(1);
     }
-    char *new_addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
+    void *new_addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
     if (new_addr == MAP_FAILED) {
       fprintf(stderr, "Error remapping file");
       exit(1);
     }
-    file->ptr = new_addr;
+    file->ptr = (char *) new_addr;
     file->size = file->offset + size;
   }
 
