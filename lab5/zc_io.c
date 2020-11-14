@@ -68,18 +68,17 @@ void zc_read_end(zc_file *file) {
  **************/
 
 char *zc_write_start(zc_file *file, size_t size) {
-  char * addr;
   if (size + file->offset > file->size) {
     ftruncate(file->fd, file->size + size);
     file->ptr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
     file->size = file->offset + size;
-    addr = file->ptr;
-  } else {
-    addr = file->ptr;
   }
+
+  char * addr = file->ptr;
   printf("File size: %zu Size: %zu Offset: %zu\n", file->size, size, file->offset);
   addr += file->offset;
   file->offset += size;
+  printf("File size: %zu Size: %zu Offset: %zu\n", file->size, size, file->offset);
   return addr;
 }
 
