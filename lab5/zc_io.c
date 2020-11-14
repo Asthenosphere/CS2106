@@ -71,10 +71,12 @@ char *zc_write_start(zc_file *file, size_t size) {
   char * addr;
   if (size + file->offset > file->size) {
     addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
+    file->size = file->offset + size;
   } else {
     addr = file->ptr;
   }
   addr += file->offset;
+  file->offset += size;
   return addr;
 }
 
