@@ -69,8 +69,15 @@ void zc_read_end(zc_file *file) {
 
 char *zc_write_start(zc_file *file, size_t size) {
   if (size + file->offset > file->size) {
-    ftruncate(file->fd, file->size + size);
+    if (ftruncate(file->fd, file->size + size) < 0) {
+      fprintf(stderr, "Error truncating file");
+      exit(1);
+    }
     char *new_addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
+    if (new_addr == MAP_FAILED) {
+      fprintf(stderr, "Error remapping file");
+      exit(1);
+    }
     file->ptr = new_addr;
     file->size = file->offset + size;
   }
