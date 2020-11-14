@@ -69,7 +69,7 @@ void zc_read_end(zc_file *file) {
 
 char *zc_write_start(zc_file *file, size_t size) {
   if (size + file->offset > file->size) {
-    if (ftruncate(file->fd, file->size + size) < 0) {
+    if (ftruncate(file->fd, file->offset + size) < 0) {
       fprintf(stderr, "Error truncating file");
       exit(1);
     }
