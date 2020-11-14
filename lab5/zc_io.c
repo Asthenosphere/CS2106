@@ -30,9 +30,9 @@ zc_file *zc_open(const char *path) {
   fstat(file->fd, &st);
   char * addr;
   if (st.st_size == 0) {
-      addr = mmap(NULL, 1, PROT_WRITE | PROT_READ, MAP_PRIVATE, file->fd, 0);
+      addr = mmap(NULL, 1, PROT_WRITE | PROT_READ, MAP_SHARED, file->fd, 0);
   } else {
-      addr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_PRIVATE, file->fd, 0);
+      addr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, file->fd, 0);
   }
   file->ptr = addr;
   file->size = st.st_size;
@@ -45,6 +45,7 @@ int zc_close(zc_file *file) {
   if (flag < 0) {
       return flag;
   }
+  close(file->fd);
   free(file);
   return 0;
 }
