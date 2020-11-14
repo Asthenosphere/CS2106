@@ -100,7 +100,17 @@ void zc_write_end(zc_file *file) {
  **************/
 
 off_t zc_lseek(zc_file *file, long offset, int whence) {
-  // To implement
+  switch (whence) {
+    case SEEK_SET:
+      file->offset = offset;
+      return offset;
+    case SEEK_CUR:
+      file->offset += offset;
+      return file->offset;
+    case SEEK_END:
+      file->offset = file->size + offset;
+      return file->offset;
+  }
   return -1;
 }
 
