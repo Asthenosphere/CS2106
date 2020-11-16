@@ -132,21 +132,12 @@ off_t zc_lseek(zc_file *file, long offset, int whence) {
   switch (whence) {
     case SEEK_SET:
       file->offset = offset;
-      if (file->offset < 0) {
-        return -1;
-      }
       break;
     case SEEK_CUR:
       file->offset += offset;
-      if (file->offset < 0) {
-        return -1;
-      }
       break;
     case SEEK_END:
       file->offset = file->size + offset;
-      if (file->offset < 0) {
-        return -1;
-      }
       break;
     default:
       sem_post(&(file->roomEmpty));
