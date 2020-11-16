@@ -162,6 +162,8 @@ int zc_copyfile(const char *source, const char *dest) {
   }
 
   int len = st.st_size;
+  ftruncate(file2->fd, len);
+
   int ret;
 
   do {
