@@ -33,11 +33,7 @@ zc_file *zc_open(const char *path) {
   struct stat st;
   fstat(file->fd, &st);
   char * addr;
-  if (st.st_size == 0) {
-      addr = mmap(NULL, 1, PROT_WRITE | PROT_READ, MAP_SHARED, file->fd, 0);
-  } else {
-      addr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, file->fd, 0);
-  }
+  addr = mmap(NULL, st.st_size, PROT_WRITE | PROT_READ, MAP_SHARED, file->fd, 0);
   file->ptr = addr;
   file->size = st.st_size;
   file->offset = 0;
@@ -95,20 +91,30 @@ char *zc_write_start(zc_file *file, size_t size) {
       fprintf(stderr, "Error truncating file");
       exit(1);
     }
-    void *new_addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
-    if (new_addr == MAP_FAILED) {
-      fprintf(stderr, "Error remapping file");
-      exit(1);
+    void *new_addr;
+    if (file->size == 0) {
+      new_addr = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, file->fd, 0);
+      if (new_addr == MAP_FAILED) {
+        fprintf(stderr, "Error mapping file");
+        exit(1);
+      }
+      file->size = size;
+      file->offset = 0;
+    } else {
+      new_addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
+      if (new_addr == MAP_FAILED) {
+        fprintf(stderr, "Error remapping file");
+        exit(1);
+      }
+      file->size = file->offset + size;
     }
+
     file->ptr = (char *) new_addr;
-    file->size = file->offset + size;
   }
 
   char * addr = file->ptr;
-  printf("File size: %zu Size: %zu Offset: %zu\n", file->size, size, file->offset);
   addr += file->offset;
   file->offset += size;
-  printf("File size: %zu Size: %zu Offset: %zu\n", file->size, size, file->offset);
   return addr;
 }
 
@@ -126,12 +132,21 @@ off_t zc_lseek(zc_file *file, long offset, int whence) {
   switch (whence) {
     case SEEK_SET:
       file->offset = offset;
+      if (file->offset < 0) {
+        return -1;
+      }
       break;
     case SEEK_CUR:
       file->offset += offset;
+      if (file->offset < 0) {
+        return -1;
+      }
       break;
     case SEEK_END:
       file->offset = file->size + offset;
+      if (file->offset < 0) {
+        return -1;
+      }
       break;
     default:
       sem_post(&(file->roomEmpty));
