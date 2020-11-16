@@ -28,7 +28,7 @@ zc_file *zc_open(const char *path) {
   file->fd = open(path, O_RDWR | O_CREAT, 0666);
   if (file->fd < 0) {
       fprintf(stderr, "Error opening file");
-      exit(1);
+      return (void *) -1;
   }
   struct stat st;
   fstat(file->fd, &st);
@@ -164,17 +164,9 @@ int zc_copyfile(const char *source, const char *dest) {
   int len = st.st_size;
   ftruncate(file2->fd, len);
 
-  int ret;
-
-  do {
-    ret = copy_file_range(file1->fd, NULL, file2->fd, NULL, len, 0);
-    if (ret < 0) {
-      fprintf(stderr, "Error copying file");
-      exit(1);
-    }
-
-    len -= ret;
-  } while (len > 0 && ret > 0);
+  for (int i = 0; i < len; i++) {
+    *(file1->ptr + i) = *(file2->ptr + i);
+  }
 
   zc_close(file1);
   return 0;
