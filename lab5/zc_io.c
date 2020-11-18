@@ -94,14 +94,16 @@ char *zc_write_start(zc_file *file, size_t size) {
   if (size + file->offset > file->size) {
     if (ftruncate(file->fd, file->offset + size) < 0) {
       fprintf(stderr, "Error truncating file");
-      exit(1);
+      sem_post(&(file->roomEmpty));
+      return NULL;
     }
     void *new_addr;
     if (file->size == 0) {
       new_addr = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, file->fd, 0);
       if (new_addr == MAP_FAILED) {
         fprintf(stderr, "Error mapping file");
-        exit(1);
+        sem_post(&(file->roomEmpty));
+        return NULL;
       }
       sem_wait(&(file->sem));
       file->size = size;
@@ -111,7 +113,8 @@ char *zc_write_start(zc_file *file, size_t size) {
       new_addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
       if (new_addr == MAP_FAILED) {
         fprintf(stderr, "Error remapping file");
-        exit(1);
+        sem_post(&(file->roomEmpty));
+        return NULL;
       }
       sem_wait(&(file->sem));
       file->size = file->offset + size;
@@ -152,6 +155,7 @@ off_t zc_lseek(zc_file *file, long offset, int whence) {
       file->offset = file->size + offset;
       break;
     default:
+      sem_post(&(file->sem));
       sem_post(&(file->roomEmpty));
       return -1;
   }
