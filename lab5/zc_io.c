@@ -29,7 +29,7 @@ zc_file *zc_open(const char *path) {
   file->fd = open(path, O_RDWR | O_CREAT, 0666);
   if (file->fd < 0) {
       fprintf(stderr, "Error opening file");
-      return (void *) -1;
+      return NULL;
   }
   struct stat st;
   fstat(file->fd, &st);
@@ -171,7 +171,7 @@ int zc_copyfile(const char *source, const char *dest) {
 
   if (fstat(file1->fd, &st) == -1) {
     fprintf(stderr, "Error getting file stats");
-    exit(1);
+    return -1;
   }
 
   int len = st.st_size;
@@ -183,7 +183,7 @@ int zc_copyfile(const char *source, const char *dest) {
     ret = copy_file_range(file1->fd, NULL, file2->fd, NULL, len, 0);
     if (ret < 0) {
       fprintf(stderr, "Error copying file");
-      exit(1);
+      return -1;
     }
     len -= ret;
   } while (len > 0 && ret > 0);
