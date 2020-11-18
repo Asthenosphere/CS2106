@@ -16,6 +16,7 @@ struct zc_file {
   int fd;
   sem_t mutex;
   sem_t roomEmpty;
+  sem_t sem;
   int nReader;
 };
 
@@ -39,6 +40,7 @@ zc_file *zc_open(const char *path) {
   file->offset = 0;
   sem_init(&(file->mutex), 0, 1);
   sem_init(&(file->roomEmpty), 0, 1);
+  sem_init(&(file->sem), 0, 1);
   file->nReader = 0;
   return file;
 }
@@ -51,6 +53,7 @@ int zc_close(zc_file *file) {
   close(file->fd);
   sem_destroy(&(file->mutex));
   sem_destroy(&(file->roomEmpty));
+  sem_destroy(&(file->sem));
   free(file);
   return 0;
 }
@@ -67,7 +70,9 @@ const char *zc_read_start(zc_file *file, size_t *size) {
       *size = file->size - file->offset;
   }
   res += file->offset;
+  sem_wait(&(file->sem));
   file->offset += *size;
+  sem_post(&(file->sem));
   return res;
 }
 
@@ -98,15 +103,19 @@ char *zc_write_start(zc_file *file, size_t size) {
         fprintf(stderr, "Error mapping file");
         exit(1);
       }
+      sem_wait(&(file->sem));
       file->size = size;
       file->offset = 0;
+      sem_post(&(file->sem));
     } else {
       new_addr = mremap(file->ptr, file->size, file->offset + size, MREMAP_MAYMOVE);
       if (new_addr == MAP_FAILED) {
         fprintf(stderr, "Error remapping file");
         exit(1);
       }
+      sem_wait(&(file->sem));
       file->size = file->offset + size;
+      sem_post(&(file->sem));
     }
 
     file->ptr = (char *) new_addr;
@@ -114,7 +123,9 @@ char *zc_write_start(zc_file *file, size_t size) {
 
   char * addr = file->ptr;
   addr += file->offset;
+  sem_wait(&(file->sem));
   file->offset += size;
+  sem_post(&(file->sem));
   return addr;
 }
 
@@ -129,6 +140,7 @@ void zc_write_end(zc_file *file) {
 
 off_t zc_lseek(zc_file *file, long offset, int whence) {
   sem_wait(&(file->roomEmpty));
+  sem_wait(&(file->sem));
   switch (whence) {
     case SEEK_SET:
       file->offset = offset;
@@ -143,6 +155,7 @@ off_t zc_lseek(zc_file *file, long offset, int whence) {
       sem_post(&(file->roomEmpty));
       return -1;
   }
+  sem_post(&(file->sem));
   sem_post(&(file->roomEmpty));
   return file->offset;
 }
